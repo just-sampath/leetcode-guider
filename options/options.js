@@ -46,11 +46,13 @@ let currentProvider = 'openai';
  * Initialize the options page
  */
 async function init() {
+    console.log('[Options] Initializing...');
+
+    // Set up event listeners first so UI is interactive immediately
+    setupEventListeners();
+
     // Load saved settings
     await loadSettings();
-
-    // Set up event listeners
-    setupEventListeners();
 
     // Update UI with current settings
     updateUI();
@@ -64,17 +66,21 @@ async function loadSettings() {
         const result = await chrome.storage.local.get(STORAGE_KEY);
         const saved = result[STORAGE_KEY] || {};
 
+        // Robust merging to handle potential null/undefined values in saved data
         currentSettings = {
             ...DEFAULT_SETTINGS,
             ...saved,
-            models: { ...DEFAULT_SETTINGS.models, ...saved.models },
-            apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...saved.apiKeys },
-            baseUrls: { ...DEFAULT_SETTINGS.baseUrls, ...saved.baseUrls }
+            models: { ...DEFAULT_SETTINGS.models, ...(saved.models || {}) },
+            apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...(saved.apiKeys || {}) },
+            baseUrls: { ...DEFAULT_SETTINGS.baseUrls, ...(saved.baseUrls || {}) }
         };
 
-        currentProvider = currentSettings.provider;
+        currentProvider = currentSettings.provider || 'openai';
+        console.log('[Options] Settings loaded:', currentSettings);
     } catch (error) {
-        console.error('Failed to load settings:', error);
+        console.error('[Options] Failed to load settings:', error);
+        // Fallback to defaults if load fails
+        currentSettings = { ...DEFAULT_SETTINGS };
     }
 }
 
@@ -98,6 +104,7 @@ function setupEventListeners() {
     // Provider selection
     document.querySelectorAll('input[name="provider"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
+            console.log('[Options] Provider changed:', e.target.value);
             currentProvider = e.target.value;
             currentSettings.provider = currentProvider;
             updateProviderUI();

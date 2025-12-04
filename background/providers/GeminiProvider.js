@@ -30,32 +30,35 @@ class GeminiProvider extends AiProvider {
 
     /**
      * Map reasoning effort to Gemini's thinkingConfig
-     * Verified from API docs:
-     * - thinkingLevel: 'LOW' or 'HIGH'
-     * - thinkingBudget: optional integer for token budget
+     * 
+     * IMPORTANT: Gemini 2.5 models use thinkingBudget ONLY (not thinkingLevel)
+     * - thinkingBudget: 0 = disabled, -1 = dynamic, or explicit token count
+     * - Range: 128 to 32768 for Gemini 2.5 Pro
+     * - Gemini 3+ models use thinkingLevel: 'LOW' | 'HIGH'
+     * 
+     * For compatibility, we use thinkingBudget which works with 2.5 models
      */
-    mapReasoningEffort(effort) {
-        const configMap = {
-            'low': {
-                thinkingConfig: {
-                    thinkingLevel: 'LOW'
-                }
-            },
-            'medium': {
-                thinkingConfig: {
-                    thinkingLevel: 'HIGH',
-                    thinkingBudget: 4096
-                }
-            },
-            'high': {
-                thinkingConfig: {
-                    thinkingLevel: 'HIGH',
-                    thinkingBudget: 16384
-                }
-            }
-        };
+    mapReasoningEffort(effort, model = '') {
+        // For Gemini 2.5 models, use thinkingBudget only
+        const is25Model = model.includes('2.5') || model.includes('gemini-2');
 
-        return configMap[effort] || configMap.medium;
+        if (is25Model) {
+            // thinkingBudget only for 2.5 models
+            const budgetMap = {
+                'low': { thinkingBudget: 1024 },      // Minimal thinking
+                'medium': { thinkingBudget: 8192 },   // Moderate thinking
+                'high': { thinkingBudget: 24576 }     // Deep thinking
+            };
+            return { thinkingConfig: budgetMap[effort] || budgetMap.medium };
+        } else {
+            // For Gemini 3+ models, use thinkingLevel
+            const levelMap = {
+                'low': { thinkingLevel: 'LOW' },
+                'medium': { thinkingLevel: 'HIGH' },
+                'high': { thinkingLevel: 'HIGH' }
+            };
+            return { thinkingConfig: levelMap[effort] || levelMap.medium };
+        }
     }
 
     async callModel(options) {
@@ -71,7 +74,7 @@ class GeminiProvider extends AiProvider {
             parts: [{ text: m.content }]
         }));
 
-        const thinkingConfig = this.mapReasoningEffort(reasoningEffort);
+        const thinkingConfig = this.mapReasoningEffort(reasoningEffort, model);
 
         const requestBody = {
             contents: contents,

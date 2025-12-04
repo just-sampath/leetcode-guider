@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode AI Coach</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="popup-container">
+        <header class="popup-header">
+            <h1>🤖 AI Coach Settings</h1>
+        </header>
+
+        <main class="popup-content">
+            <!-- Provider Selection -->
+            <div class="form-group">
+                <label>Provider</label>
+                <select id="provider-select">
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="google">Google Gemini</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+
+            <!-- API Key -->
+            <div class="form-group">
+                <label>API Key</label>
+                <div class="input-row">
+                    <input type="password" id="api-key" placeholder="sk-...">
+                    <button type="button" id="toggle-key" class="icon-btn">👁️</button>
+                </div>
+            </div>
+
+            <!-- Model -->
+            <div class="form-group">
+                <label>Model</label>
+                <select id="model-select">
+                    <option value="">-- Select --</option>
+                </select>
+                <input type="text" id="custom-model" placeholder="Or enter custom model">
+            </div>
+
+            <!-- Base URL (for custom) -->
+            <div class="form-group" id="base-url-group">
+                <label>Base URL</label>
+                <input type="text" id="base-url" placeholder="https://api.example.com/v1">
+            </div>
+
+            <!-- Reasoning Effort -->
+            <div class="form-group">
+                <label>Reasoning Effort</label>
+                <select id="reasoning-effort">
+                    <option value="low">Low (Faster)</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High (Deeper)</option>
+                </select>
+            </div>
+
+            <!-- Persona -->
+            <div class="form-group">
+                <label>Custom Persona (optional)</label>
+                <textarea id="persona" rows="3" placeholder="Custom instructions for the AI..."></textarea>
+            </div>
+
+            <!-- Save -->
+            <button type="button" id="save-btn" class="save-btn">Save Settings</button>
+            <div id="status" class="status"></div>
+        </main>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

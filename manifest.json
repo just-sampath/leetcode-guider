@@ -35,7 +35,6 @@
             "run_at": "document_idle"
         }
     ],
-    "options_page": "options/options.html",
     "web_accessible_resources": [
         {
             "resources": [
@@ -52,10 +51,11 @@
         "128": "icons/icon128.png"
     },
     "action": {
+        "default_popup": "popup/popup.html",
         "default_icon": {
             "16": "icons/icon16.png",
             "48": "icons/icon48.png"
         },
-        "default_title": "LeetCode AI Coach"
+        "default_title": "LeetCode AI Coach Settings"
     }
 }
