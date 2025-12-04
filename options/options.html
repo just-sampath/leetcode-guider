@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetCode AI Coach - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="options-header">
+      <h1>🤖 LeetCode AI Coach</h1>
+      <p>Configure your AI assistant for LeetCode problem solving</p>
+    </header>
+
+    <main class="options-content">
+      <!-- Provider Selection -->
+      <section class="options-section">
+        <h2>AI Provider</h2>
+        <div class="provider-cards">
+          <label class="provider-card">
+            <input type="radio" name="provider" value="openai">
+            <div class="provider-card-content">
+              <span class="provider-icon">🟢</span>
+              <span class="provider-name">OpenAI</span>
+            </div>
+          </label>
+          <label class="provider-card">
+            <input type="radio" name="provider" value="anthropic">
+            <div class="provider-card-content">
+              <span class="provider-icon">🟠</span>
+              <span class="provider-name">Anthropic</span>
+            </div>
+          </label>
+          <label class="provider-card">
+            <input type="radio" name="provider" value="google">
+            <div class="provider-card-content">
+              <span class="provider-icon">🔵</span>
+              <span class="provider-name">Google</span>
+            </div>
+          </label>
+          <label class="provider-card">
+            <input type="radio" name="provider" value="custom">
+            <div class="provider-card-content">
+              <span class="provider-icon">⚙️</span>
+              <span class="provider-name">Custom</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- API Key -->
+      <section class="options-section">
+        <h2>API Key</h2>
+        <p class="section-description">Enter your API key for the selected provider</p>
+        <div class="input-group">
+          <input type="password" id="api-key" placeholder="sk-... or equivalent">
+          <button type="button" id="toggle-key" class="icon-btn" title="Show/Hide">👁️</button>
+        </div>
+      </section>
+
+      <!-- Model Selection -->
+      <section class="options-section">
+        <h2>Model</h2>
+        <div class="form-group">
+          <label for="model-select">Select Model</label>
+          <select id="model-select">
+            <option value="">-- Select a model --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="custom-model">Or enter custom model name</label>
+          <input type="text" id="custom-model" placeholder="e.g., gpt-5.1">
+        </div>
+      </section>
+
+      <!-- Base URL (for advanced/custom) -->
+      <section class="options-section" id="base-url-section">
+        <h2>Base URL (Optional)</h2>
+        <p class="section-description">Override the API endpoint (for proxies or custom deployments)</p>
+        <input type="text" id="base-url" placeholder="https://api.example.com/v1">
+      </section>
+
+      <!-- Reasoning Effort -->
+      <section class="options-section">
+        <h2>Default Reasoning Effort</h2>
+        <p class="section-description">Higher effort means deeper thinking but slower responses</p>
+        <div class="reasoning-slider">
+          <input type="range" id="reasoning-effort" min="1" max="3" value="2">
+          <div class="reasoning-labels">
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Persona -->
+      <section class="options-section">
+        <h2>System Persona</h2>
+        <p class="section-description">Customize how the AI coach behaves (optional)</p>
+        <textarea id="persona" rows="5" placeholder="Example: You are a strict but helpful coding interview coach who only gives incremental hints and never writes full solutions unless explicitly asked."></textarea>
+      </section>
+
+      <!-- Save Button -->
+      <div class="options-actions">
+        <button type="button" id="save-btn" class="primary-btn">Save Settings</button>
+        <span id="save-status" class="save-status"></span>
+      </div>
+    </main>
+
+    <footer class="options-footer">
+      <p>
+        LeetCode AI Coach v1.0.0 • 
+        <a href="https://github.com" target="_blank">GitHub</a> • 
+        Your API keys are stored locally
+      </p>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
