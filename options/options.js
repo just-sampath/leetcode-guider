@@ -11,7 +11,8 @@ const DEFAULT_MODELS = {
     openai: ['gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
     anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
     google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
-    custom: []
+    custom: [],
+    portkey: ['gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet-20241022', 'gemini-1.5-pro']
 };
 
 // Default settings
@@ -21,19 +22,28 @@ const DEFAULT_SETTINGS = {
         openai: 'gpt-5.1-codex',
         anthropic: 'claude-sonnet-4-5-20250929',
         google: 'gemini-2.5-flash',
-        custom: ''
+        custom: '',
+        portkey: 'gpt-4o'
     },
     apiKeys: {
         openai: '',
         anthropic: '',
         google: '',
-        custom: ''
+        custom: '',
+        portkey: ''
     },
     baseUrls: {
         openai: '',
         anthropic: '',
         google: '',
-        custom: ''
+        custom: '',
+        portkey: ''
+    },
+    virtualKeys: {
+        portkey: ''
+    },
+    portkeyConfigs: {
+        portkey: ''
     },
     reasoningEffort: 'medium',
     persona: ''
@@ -72,7 +82,9 @@ async function loadSettings() {
             ...saved,
             models: { ...DEFAULT_SETTINGS.models, ...(saved.models || {}) },
             apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...(saved.apiKeys || {}) },
-            baseUrls: { ...DEFAULT_SETTINGS.baseUrls, ...(saved.baseUrls || {}) }
+            baseUrls: { ...DEFAULT_SETTINGS.baseUrls, ...(saved.baseUrls || {}) },
+            virtualKeys: { ...DEFAULT_SETTINGS.virtualKeys, ...(saved.virtualKeys || {}) },
+            portkeyConfigs: { ...DEFAULT_SETTINGS.portkeyConfigs, ...(saved.portkeyConfigs || {}) }
         };
 
         currentProvider = currentSettings.provider || 'openai';
@@ -141,6 +153,16 @@ function setupEventListeners() {
     // Base URL
     document.getElementById('base-url').addEventListener('input', (e) => {
         currentSettings.baseUrls[currentProvider] = e.target.value;
+    });
+
+    // Portkey Virtual Key
+    document.getElementById('virtual-key')?.addEventListener('input', (e) => {
+        currentSettings.virtualKeys.portkey = e.target.value;
+    });
+
+    // Portkey Config ID
+    document.getElementById('portkey-config')?.addEventListener('input', (e) => {
+        currentSettings.portkeyConfigs.portkey = e.target.value;
     });
 
     // Reasoning effort slider
@@ -218,9 +240,21 @@ function updateProviderUI() {
     if (currentProvider === 'custom') {
         baseUrlSection.style.display = 'block';
         baseUrlSection.querySelector('h2').textContent = 'Base URL (Required)';
+    } else if (currentProvider === 'portkey') {
+        baseUrlSection.style.display = 'none'; // Portkey uses fixed base URL
     } else {
         baseUrlSection.style.display = 'block';
         baseUrlSection.querySelector('h2').textContent = 'Base URL (Optional)';
+    }
+
+    // Show/hide Portkey-specific fields
+    const portkeySection = document.getElementById('portkey-section');
+    if (portkeySection) {
+        portkeySection.style.display = currentProvider === 'portkey' ? 'block' : 'none';
+        if (currentProvider === 'portkey') {
+            document.getElementById('virtual-key').value = currentSettings.virtualKeys?.portkey || '';
+            document.getElementById('portkey-config').value = currentSettings.portkeyConfigs?.portkey || '';
+        }
     }
 }
 

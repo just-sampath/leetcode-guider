@@ -9,6 +9,7 @@ import { OpenAiProvider } from './providers/OpenAiProvider.js';
 import { AnthropicProvider } from './providers/AnthropicProvider.js';
 import { GeminiProvider } from './providers/GeminiProvider.js';
 import { CustomProvider } from './providers/CustomProvider.js';
+import { PortkeyProvider } from './providers/PortkeyProvider.js';
 
 /**
  * Provider configuration constants
@@ -17,7 +18,8 @@ const PROVIDERS = {
     OPENAI: 'openai',
     ANTHROPIC: 'anthropic',
     GOOGLE: 'google',
-    CUSTOM: 'custom'
+    CUSTOM: 'custom',
+    PORTKEY: 'portkey'
 };
 
 /**
@@ -48,6 +50,13 @@ function createProvider(settings) {
                 throw new Error('Custom provider requires a base URL');
             }
             return new CustomProvider(config);
+
+        case PROVIDERS.PORTKEY:
+            return new PortkeyProvider({
+                ...config,
+                virtualKey: settings.virtualKeys?.portkey || '',
+                configId: settings.portkeyConfigs?.portkey || ''
+            });
 
         default:
             throw new Error(`Unknown provider: ${provider}`);

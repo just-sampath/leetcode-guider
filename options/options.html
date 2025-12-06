@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LeetCode AI Coach - Settings</title>
   <link rel="stylesheet" href="options.css">
 </head>
+
 <body>
   <div class="options-container">
     <header class="options-header">
@@ -46,6 +48,13 @@
               <span class="provider-name">Custom</span>
             </div>
           </label>
+          <label class="provider-card">
+            <input type="radio" name="provider" value="portkey">
+            <div class="provider-card-content">
+              <span class="provider-icon">🚀</span>
+              <span class="provider-name">Portkey</span>
+            </div>
+          </label>
         </div>
       </section>
 
@@ -81,6 +90,20 @@
         <input type="text" id="base-url" placeholder="https://api.example.com/v1">
       </section>
 
+      <!-- Portkey Settings (conditional) -->
+      <section class="options-section" id="portkey-section" style="display: none;">
+        <h2>Portkey Settings</h2>
+        <p class="section-description">Enter either a Virtual Key OR a Config ID (not both)</p>
+        <div class="form-group">
+          <label for="virtual-key">Virtual Key</label>
+          <input type="text" id="virtual-key" placeholder="vk-...">
+        </div>
+        <div class="form-group">
+          <label for="portkey-config">Config ID</label>
+          <input type="text" id="portkey-config" placeholder="pc-...">
+        </div>
+      </section>
+
       <!-- Reasoning Effort -->
       <section class="options-section">
         <h2>Default Reasoning Effort</h2>
@@ -99,7 +122,8 @@
       <section class="options-section">
         <h2>System Persona</h2>
         <p class="section-description">Customize how the AI coach behaves (optional)</p>
-        <textarea id="persona" rows="5" placeholder="Example: You are a strict but helpful coding interview coach who only gives incremental hints and never writes full solutions unless explicitly asked."></textarea>
+        <textarea id="persona" rows="5"
+          placeholder="Example: You are a strict but helpful coding interview coach who only gives incremental hints and never writes full solutions unless explicitly asked."></textarea>
       </section>
 
       <!-- Save Button -->
@@ -111,8 +135,8 @@
 
     <footer class="options-footer">
       <p>
-        LeetCode AI Coach v1.0.0 • 
-        <a href="https://github.com" target="_blank">GitHub</a> • 
+        LeetCode AI Coach v1.0.0 •
+        <a href="https://github.com" target="_blank">GitHub</a> •
         Your API keys are stored locally
       </p>
     </footer>
@@ -120,4 +144,5 @@
 
   <script src="options.js"></script>
 </body>
+
 </html>

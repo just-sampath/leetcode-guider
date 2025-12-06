@@ -21,7 +21,8 @@ const UiPanel = (function () {
     openai: ['gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
     anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
     google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
-    custom: []
+    custom: [],
+    portkey: ['gpt-4o', 'gpt-4o-mini', 'claude-3-5-sonnet-20241022', 'gemini-1.5-pro']
   };
 
   /**
@@ -107,6 +108,7 @@ const UiPanel = (function () {
                   <option value="anthropic">Anthropic</option>
                   <option value="google">Google Gemini</option>
                   <option value="custom">Custom</option>
+                  <option value="portkey">Portkey</option>
                 </select>
               </div>
               <div class="lc-settings-group">
@@ -123,6 +125,13 @@ const UiPanel = (function () {
               <div class="lc-settings-group" id="lc-settings-baseurl-group" style="display:none;">
                 <label>Base URL</label>
                 <input type="text" id="lc-settings-baseurl" placeholder="https://api.example.com/v1">
+              </div>
+              <div class="lc-settings-group" id="lc-settings-portkey-group" style="display:none;">
+                <label>Virtual Key (optional)</label>
+                <input type="text" id="lc-settings-virtualkey" placeholder="vk-...">
+                <label style="margin-top: 8px;">Config ID (optional)</label>
+                <input type="text" id="lc-settings-configid" placeholder="pc-...">
+                <p class="lc-settings-hint">Use either Virtual Key OR Config ID, not both</p>
               </div>
               <div class="lc-settings-group">
                 <label>Custom Persona (optional)</label>
@@ -830,6 +839,10 @@ const UiPanel = (function () {
     const persona = document.getElementById('lc-settings-persona')?.value || '';
     const newPanelMode = document.getElementById('lc-settings-panelmode')?.value || 'popup';
 
+    // Get Portkey-specific fields
+    const virtualKey = document.getElementById('lc-settings-virtualkey')?.value || '';
+    const configId = document.getElementById('lc-settings-configid')?.value || '';
+
     try {
       // Get current settings first
       const current = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
@@ -842,7 +855,9 @@ const UiPanel = (function () {
         panelMode: newPanelMode,
         apiKeys: { ...(current.apiKeys || {}), [provider]: apiKey },
         models: { ...(current.models || {}), [provider]: model },
-        baseUrls: { ...(current.baseUrls || {}), [provider]: baseUrl }
+        baseUrls: { ...(current.baseUrls || {}), [provider]: baseUrl },
+        virtualKeys: { ...(current.virtualKeys || {}), portkey: virtualKey },
+        portkeyConfigs: { ...(current.portkeyConfigs || {}), portkey: configId }
       };
 
       // Save
@@ -924,6 +939,18 @@ const UiPanel = (function () {
     const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
     if (baseUrlGroup) {
       baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+
+    // Toggle Portkey-specific fields visibility
+    const portkeyGroup = document.getElementById('lc-settings-portkey-group');
+    if (portkeyGroup) {
+      portkeyGroup.style.display = provider === 'portkey' ? 'block' : 'none';
+      if (provider === 'portkey') {
+        const virtualKeyEl = document.getElementById('lc-settings-virtualkey');
+        const configIdEl = document.getElementById('lc-settings-configid');
+        if (virtualKeyEl) virtualKeyEl.value = currentSettings?.virtualKeys?.portkey || '';
+        if (configIdEl) configIdEl.value = currentSettings?.portkeyConfigs?.portkey || '';
+      }
     }
   }
 
@@ -1016,4 +1043,3 @@ const UiPanel = (function () {
 
 // Make available globally
 window.UiPanel = UiPanel;
-
