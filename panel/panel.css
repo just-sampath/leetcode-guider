@@ -787,6 +787,34 @@
   font-style: italic;
 }
 
+/* Checkbox Group */
+.lc-settings-checkbox-group {
+  padding: 8px 0;
+}
+
+.lc-settings-checkbox-label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--lc-text-secondary) !important;
+}
+
+.lc-settings-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--lc-accent);
+  cursor: pointer;
+}
+
+.lc-settings-checkbox-label span {
+  user-select: none;
+}
+
 /* ============================================
    Sidebar Mode Overrides
    ============================================ */

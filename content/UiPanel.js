@@ -145,6 +145,12 @@ const UiPanel = (function () {
                 </select>
                 <p class="lc-settings-hint">Changes take effect on page refresh</p>
               </div>
+              <div class="lc-settings-group lc-settings-checkbox-group">
+                <label class="lc-settings-checkbox-label">
+                  <input type="checkbox" id="lc-settings-openonload">
+                  <span>Open panel automatically on page load</span>
+                </label>
+              </div>
               <button class="lc-ai-coach-action-btn" id="lc-save-settings-btn">
                 💾 Save Settings
               </button>
@@ -1042,6 +1048,9 @@ const UiPanel = (function () {
     const virtualKey = document.getElementById('lc-settings-virtualkey')?.value || '';
     const configId = document.getElementById('lc-settings-configid')?.value || '';
 
+    // Get open on page load setting
+    const openOnPageLoad = document.getElementById('lc-settings-openonload')?.checked || false;
+
     try {
       // Get current settings first
       const current = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
@@ -1056,7 +1065,8 @@ const UiPanel = (function () {
         models: { ...(current.models || {}), [provider]: model },
         baseUrls: { ...(current.baseUrls || {}), [provider]: baseUrl },
         virtualKeys: { ...(current.virtualKeys || {}), portkey: virtualKey },
-        portkeyConfigs: { ...(current.portkeyConfigs || {}), portkey: configId }
+        portkeyConfigs: { ...(current.portkeyConfigs || {}), portkey: configId },
+        openOnPageLoad: openOnPageLoad
       };
 
       // Save
@@ -1188,6 +1198,12 @@ const UiPanel = (function () {
         panelModeEl.value = response.panelMode;
       }
 
+      // Update open on page load checkbox
+      const openOnLoadEl = document.getElementById('lc-settings-openonload');
+      if (openOnLoadEl) {
+        openOnLoadEl.checked = response.openOnPageLoad || false;
+      }
+
       // Load chat history for this problem (use current tab as mode)
       await loadChatHistory(currentTab === 'settings' ? 'overview' : currentTab);
     } catch (error) {
@@ -1211,6 +1227,15 @@ const UiPanel = (function () {
 
       // Inject panel based on mode
       injectPanel();
+
+      // Auto-open panel if setting is enabled (for popup mode)
+      if (response.openOnPageLoad && panelMode === 'popup') {
+        isVisible = true;
+        const panel = document.getElementById('lc-ai-coach-panel');
+        const toggle = document.getElementById('lc-ai-coach-toggle');
+        if (panel) panel.style.display = 'flex';
+        if (toggle) toggle.style.display = 'none';
+      }
 
       console.log('[UiPanel] Initialized');
     } catch (error) {
