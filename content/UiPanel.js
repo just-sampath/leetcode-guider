@@ -9,17 +9,20 @@
 
 const UiPanel = (function () {
   let panelElement = null;
-  let isVisible = true;
+  let isVisible = false; // Start minimized - don't auto-open
   let currentTab = 'overview';
   let isLoading = false;
   let currentSettings = null;
+  let panelMode = 'popup'; // 'popup' | 'sidebar' | 'sidepanel'
+  let sidebarWidth = 380;
 
   /**
    * Create the panel HTML structure
+   * Panel starts hidden, toggle button starts visible
    */
   function createPanelHTML() {
     return `
-      <div id="lc-ai-coach-panel" class="lc-ai-coach-panel">
+      <div id="lc-ai-coach-panel" class="lc-ai-coach-panel" style="display: none;">
         <div class="lc-ai-coach-header">
           <div class="lc-ai-coach-title">
             <span class="lc-ai-coach-icon">🤖</span>
@@ -110,6 +113,14 @@ const UiPanel = (function () {
                 <label>Base URL</label>
                 <input type="text" id="lc-settings-baseurl" placeholder="https://api.example.com/v1">
               </div>
+              <div class="lc-settings-group">
+                <label>Panel Mode</label>
+                <select id="lc-settings-panelmode">
+                  <option value="popup">Floating Popup</option>
+                  <option value="sidebar">Injected Sidebar</option>
+                </select>
+                <p class="lc-settings-hint">Changes take effect on page refresh</p>
+              </div>
               <button class="lc-ai-coach-action-btn" id="lc-save-settings-btn">
                 💾 Save Settings
               </button>
@@ -152,20 +163,25 @@ const UiPanel = (function () {
         <div class="lc-ai-coach-error" style="display: none;"></div>
       </div>
       
-      <!-- Toggle Button (when minimized) -->
-      <button id="lc-ai-coach-toggle" class="lc-ai-coach-toggle" style="display: none;">
+      <!-- Toggle Button (starts visible since panel is minimized) -->
+      <button id="lc-ai-coach-toggle" class="lc-ai-coach-toggle" style="display: block;">
         🤖
       </button>
     `;
   }
 
   /**
-   * Inject the panel into the page
+   * Inject the panel into the page based on panelMode
    */
   function injectPanel() {
     // Remove existing panel if present
     const existing = document.getElementById('lc-ai-coach-container');
     if (existing) existing.remove();
+
+    // Remove any sidebar adjustments
+    document.body.style.marginRight = '';
+    document.documentElement.style.marginRight = '';
+
 
     // Create container
     const container = document.createElement('div');
@@ -175,11 +191,231 @@ const UiPanel = (function () {
 
     panelElement = document.getElementById('lc-ai-coach-panel');
 
+    // Apply mode-specific styles
+    if (panelMode === 'sidebar') {
+      applySidebarMode();
+    }
+
     // Set up event listeners
     setupEventListeners();
 
-    // Load settings
-    loadSettings();
+    // Load settings (don't re-fetch mode)
+    loadSettingsUI();
+  }
+
+  /**
+   * Apply sidebar mode - dock to right and push page content
+   */
+  function applySidebarMode() {
+    const panel = document.getElementById('lc-ai-coach-panel');
+    const toggle = document.getElementById('lc-ai-coach-toggle');
+    const container = document.getElementById('lc-ai-coach-container');
+
+    if (!panel || !container) return;
+
+    // Add sidebar class
+    container.classList.add('lc-ai-coach-sidebar-mode');
+
+    // Modify panel styles for sidebar
+    panel.style.cssText = `
+      position: fixed !important;
+      top: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: ${sidebarWidth}px !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      border-left: 1px solid #333 !important;
+      display: flex !important;
+      z-index: 10000 !important;
+      transition: transform 0.3s ease !important;
+    `;
+
+    // Hide the floating toggle
+    if (toggle) toggle.style.display = 'none';
+
+    // Add resize handle
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'lc-ai-coach-resize-handle';
+    resizeHandle.style.cssText = `
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      cursor: ew-resize;
+      background: transparent;
+      z-index: 10001;
+    `;
+    resizeHandle.addEventListener('mousedown', startResize);
+    panel.appendChild(resizeHandle);
+
+    // Add collapse button to header
+    const header = panel.querySelector('.lc-ai-coach-header-actions');
+    if (header) {
+      const collapseBtn = document.createElement('button');
+      collapseBtn.className = 'lc-ai-coach-collapse-btn';
+      collapseBtn.title = 'Collapse Sidebar';
+      collapseBtn.textContent = '→';
+      collapseBtn.addEventListener('click', toggleSidebar);
+      header.insertBefore(collapseBtn, header.firstChild);
+
+      // Hide minimize and settings buttons in sidebar mode - collapse button is sufficient
+      const minimizeBtn = header.querySelector('.lc-ai-coach-minimize-btn');
+      if (minimizeBtn) minimizeBtn.style.display = 'none';
+
+      const settingsBtn = header.querySelector('.lc-ai-coach-settings-btn');
+      if (settingsBtn) settingsBtn.style.display = 'none';
+    }
+
+    // Create collapsed sidebar tab (stays visible when sidebar is hidden)
+    const collapsedTab = document.createElement('div');
+    collapsedTab.id = 'lc-ai-coach-collapsed-tab';
+    collapsedTab.className = 'lc-ai-coach-collapsed-tab';
+    collapsedTab.innerHTML = '🤖';
+    collapsedTab.title = 'Open AI Coach';
+    collapsedTab.style.display = 'none'; // Hidden initially since sidebar is open
+    collapsedTab.addEventListener('click', toggleSidebar);
+    container.appendChild(collapsedTab);
+
+    // Push page content - target LeetCode's main layout container
+    adjustPageLayout(sidebarWidth);
+
+    // Start visible in sidebar mode
+    isVisible = true;
+
+    console.log('[UiPanel] Sidebar mode applied');
+  }
+
+  /**
+   * Adjust LeetCode's page layout to make room for sidebar
+   * Uses multiple strategies to push content
+   */
+  function adjustPageLayout(width) {
+    // Strategy 1: Target LeetCode's #__next root container
+    const nextRoot = document.getElementById('__next');
+    if (nextRoot) {
+      nextRoot.style.cssText = `
+        width: calc(100% - ${width}px) !important;
+        max-width: calc(100% - ${width}px) !important;
+        transition: width 0.3s ease, max-width 0.3s ease !important;
+      `;
+    }
+
+    // Strategy 2: Also adjust body for any fixed elements
+    document.body.style.marginRight = `${width}px`;
+    document.body.style.transition = 'margin-right 0.3s ease';
+
+    // Strategy 3: Mark document for CSS-based adjustments
+    document.documentElement.style.setProperty('--lc-sidebar-width', `${width}px`);
+  }
+
+  /**
+   * Reset page layout when sidebar is hidden
+   */
+  function resetPageLayout() {
+    const nextRoot = document.getElementById('__next');
+    if (nextRoot) {
+      nextRoot.style.cssText = `
+        width: 100% !important;
+        max-width: 100% !important;
+        transition: width 0.3s ease, max-width 0.3s ease !important;
+      `;
+    }
+    document.body.style.marginRight = '0';
+    document.documentElement.style.setProperty('--lc-sidebar-width', '0px');
+  }
+
+  /**
+   * Toggle sidebar visibility
+   */
+  function toggleSidebar() {
+    const panel = document.getElementById('lc-ai-coach-panel');
+    const collapseBtn = panel?.querySelector('.lc-ai-coach-collapse-btn');
+    const collapsedTab = document.getElementById('lc-ai-coach-collapsed-tab');
+
+    isVisible = !isVisible;
+
+    if (isVisible) {
+      // Show sidebar
+      panel.style.transform = 'translateX(0)';
+      adjustPageLayout(sidebarWidth);
+      if (collapseBtn) collapseBtn.textContent = '→';
+      if (collapsedTab) collapsedTab.style.display = 'none';
+    } else {
+      // Hide sidebar
+      panel.style.transform = `translateX(${sidebarWidth}px)`;
+      resetPageLayout();
+      if (collapseBtn) collapseBtn.textContent = '←';
+      if (collapsedTab) collapsedTab.style.display = 'flex';
+    }
+  }
+
+
+  /**
+   * Start resize operation
+   */
+  function startResize(e) {
+    e.preventDefault();
+
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    function doResize(e) {
+      const delta = startX - e.clientX;
+      const newWidth = Math.max(300, Math.min(600, startWidth + delta));
+      sidebarWidth = newWidth;
+
+      const panel = document.getElementById('lc-ai-coach-panel');
+      if (panel) {
+        panel.style.width = `${newWidth}px`;
+      }
+      adjustPageLayout(newWidth);
+    }
+
+    function stopResize() {
+      document.removeEventListener('mousemove', doResize);
+      document.removeEventListener('mouseup', stopResize);
+
+      // Save width preference
+      saveSidebarWidth();
+    }
+
+    document.addEventListener('mousemove', doResize);
+    document.addEventListener('mouseup', stopResize);
+  }
+
+  /**
+   * Save sidebar width preference
+   */
+  async function saveSidebarWidth() {
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'UPDATE_SETTING',
+        payload: { key: 'sidebarWidth', value: sidebarWidth }
+      });
+    } catch (error) {
+      console.error('[UiPanel] Failed to save sidebar width:', error);
+    }
+  }
+
+  /**
+   * Set up message handler for Chrome Side Panel communication
+   */
+  function setupSidePanelMessageHandler() {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.type === 'GET_PROBLEM_CONTEXT') {
+        const context = window.LeetCodeDomAdapter.getContext();
+        sendResponse({ context });
+        return true;
+      }
+      if (request.type === 'GET_CODE') {
+        const code = window.CodeBridge?.getCode?.() || '';
+        const language = window.LeetCodeDomAdapter?.getLanguage?.() || 'unknown';
+        sendResponse({ code, language });
+        return true;
+      }
+    });
   }
 
   /**
@@ -388,7 +624,7 @@ const UiPanel = (function () {
   }
 
   /**
-   * Simple markdown-like formatting
+   * Enhanced markdown-like formatting
    */
   function formatMarkdown(text) {
     if (!text) return '';
@@ -399,7 +635,7 @@ const UiPanel = (function () {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Code blocks
+    // Code blocks (must be done first to preserve content)
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
       return `<pre class="lc-ai-coach-code"><code class="language-${lang}">${code.trim()}</code></pre>`;
     });
@@ -418,8 +654,34 @@ const UiPanel = (function () {
     html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
     html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
 
-    // Line breaks
+    // Numbered lists (1. item, 2. item, etc.)
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li class="lc-numbered-item">$2</li>');
+
+    // Bullet lists (- item or * item)
+    html = html.replace(/^[-*] (.+)$/gm, '<li class="lc-bullet-item">$1</li>');
+
+    // Wrap consecutive list items in ul/ol
+    html = html.replace(/(<li class="lc-numbered-item">[\s\S]*?<\/li>)(\s*<br>)*(\s*<li class="lc-numbered-item">)/g, '$1$3');
+    html = html.replace(/(<li class="lc-bullet-item">[\s\S]*?<\/li>)(\s*<br>)*(\s*<li class="lc-bullet-item">)/g, '$1$3');
+
+    // Wrap numbered items in ol
+    html = html.replace(/(<li class="lc-numbered-item">[\s\S]*?<\/li>)+/g, '<ol class="lc-ai-list">$&</ol>');
+
+    // Wrap bullet items in ul
+    html = html.replace(/(<li class="lc-bullet-item">[\s\S]*?<\/li>)+/g, '<ul class="lc-ai-list">$&</ul>');
+
+    // Paragraphs - double newlines become paragraph breaks
+    html = html.replace(/\n\n+/g, '</p><p class="lc-ai-paragraph">');
+
+    // Single line breaks
     html = html.replace(/\n/g, '<br>');
+
+    // Wrap in paragraph
+    html = '<p class="lc-ai-paragraph">' + html + '</p>';
+
+    // Clean up empty paragraphs
+    html = html.replace(/<p class="lc-ai-paragraph"><\/p>/g, '');
+    html = html.replace(/<p class="lc-ai-paragraph">(\s*<br>\s*)*<\/p>/g, '');
 
     return html;
   }
@@ -570,8 +832,62 @@ const UiPanel = (function () {
       if (baseUrlGroup) {
         baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
       }
+
+      // Load chat history for this problem
+      await loadChatHistory();
     } catch (error) {
       console.error('[UiPanel] Failed to load settings:', error);
+    }
+  }
+
+  /**
+   * Load and display chat history for current problem
+   */
+  async function loadChatHistory() {
+    try {
+      const slug = window.LeetCodeDomAdapter.extractSlugFromUrl();
+      if (!slug) return;
+
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_HISTORY',
+        payload: { problemSlug: slug }
+      });
+
+      const history = response.history || [];
+
+      if (history.length === 0) {
+        // No history - show placeholder
+        return;
+      }
+
+      // Display the last assistant response from history
+      const contentEl = document.querySelector('.lc-ai-coach-response-content');
+      if (!contentEl) return;
+
+      // Find the last assistant message
+      const lastAssistantMsg = [...history].reverse().find(msg => msg.role === 'assistant');
+
+      if (lastAssistantMsg) {
+        // Build history display HTML
+        let html = '';
+
+        // Show conversation count
+        const exchangeCount = Math.floor(history.length / 2);
+        html += `<div class="lc-ai-coach-history-indicator">
+          <span>📜 ${exchangeCount} previous exchange${exchangeCount !== 1 ? 's' : ''}</span>
+        </div>`;
+
+        // Show the last response
+        html += `<div class="lc-ai-coach-last-response">`;
+        html += formatMarkdown(lastAssistantMsg.content);
+        html += `</div>`;
+
+        contentEl.innerHTML = html;
+
+        console.log(`[UiPanel] Loaded ${history.length} history messages for ${slug}`);
+      }
+    } catch (error) {
+      console.error('[UiPanel] Failed to load chat history:', error);
     }
   }
 
@@ -585,6 +901,7 @@ const UiPanel = (function () {
     const apiKey = document.getElementById('lc-settings-apikey')?.value || '';
     const model = document.getElementById('lc-settings-model')?.value || '';
     const baseUrl = document.getElementById('lc-settings-baseurl')?.value || '';
+    const newPanelMode = document.getElementById('lc-settings-panelmode')?.value || 'popup';
 
     try {
       // Get current settings first
@@ -594,6 +911,7 @@ const UiPanel = (function () {
       const newSettings = {
         ...current,
         provider: provider,
+        panelMode: newPanelMode,
         apiKeys: { ...(current.apiKeys || {}), [provider]: apiKey },
         models: { ...(current.models || {}), [provider]: model },
         baseUrls: { ...(current.baseUrls || {}), [provider]: baseUrl }
@@ -635,11 +953,82 @@ const UiPanel = (function () {
   }
 
   /**
-   * Initialize the panel
+   * Load settings UI only (without fetching mode again)
+   * Called after panel injection
    */
-  function init() {
-    injectPanel();
-    console.log('[UiPanel] Initialized');
+  async function loadSettingsUI() {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
+      currentSettings = response;
+
+      // Update reasoning effort selector
+      const reasoningEl = document.getElementById('lc-reasoning-effort');
+      if (reasoningEl && response.reasoningEffort) {
+        reasoningEl.value = response.reasoningEffort;
+      }
+
+      // Populate inline settings form
+      const provider = response.provider || 'openai';
+      const providerEl = document.getElementById('lc-settings-provider');
+      if (providerEl) providerEl.value = provider;
+
+      const apiKeyEl = document.getElementById('lc-settings-apikey');
+      if (apiKeyEl && response.apiKeys) {
+        apiKeyEl.value = response.apiKeys[provider] || '';
+      }
+
+      const modelEl = document.getElementById('lc-settings-model');
+      if (modelEl && response.models) {
+        modelEl.value = response.models[provider] || '';
+      }
+
+      const baseUrlEl = document.getElementById('lc-settings-baseurl');
+      if (baseUrlEl && response.baseUrls) {
+        baseUrlEl.value = response.baseUrls[provider] || '';
+      }
+
+      const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
+      if (baseUrlGroup) {
+        baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
+      }
+
+      // Update panel mode selector
+      const panelModeEl = document.getElementById('lc-settings-panelmode');
+      if (panelModeEl && response.panelMode) {
+        panelModeEl.value = response.panelMode;
+      }
+
+      // Load chat history for this problem
+      await loadChatHistory();
+    } catch (error) {
+      console.error('[UiPanel] Failed to load settings:', error);
+    }
+  }
+
+  /**
+   * Initialize the panel
+   * First loads settings to determine panel mode
+   */
+  async function init() {
+    try {
+      // Load settings first to get panel mode
+      const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
+      currentSettings = response;
+      panelMode = response.panelMode || 'popup';
+      sidebarWidth = response.sidebarWidth || 380;
+
+      console.log(`[UiPanel] Initializing in ${panelMode} mode`);
+
+      // Inject panel based on mode
+      injectPanel();
+
+      console.log('[UiPanel] Initialized');
+    } catch (error) {
+      console.error('[UiPanel] Failed to initialize:', error);
+      // Fallback to popup mode
+      panelMode = 'popup';
+      injectPanel();
+    }
   }
 
   /**
@@ -648,6 +1037,9 @@ const UiPanel = (function () {
   function destroy() {
     const container = document.getElementById('lc-ai-coach-container');
     if (container) container.remove();
+
+    // Reset body margin
+    document.body.style.marginRight = '';
   }
 
   return {
@@ -660,3 +1052,4 @@ const UiPanel = (function () {
 
 // Make available globally
 window.UiPanel = UiPanel;
+

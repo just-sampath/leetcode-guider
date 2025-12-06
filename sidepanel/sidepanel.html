@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode AI Coach</title>
+    <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+    <div class="sidepanel-container">
+        <div class="sidepanel-header">
+            <div class="sidepanel-title">
+                <span class="sidepanel-icon">🤖</span>
+                AI Coach
+            </div>
+            <div class="sidepanel-status" id="connection-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <div class="sidepanel-tabs">
+            <button class="sidepanel-tab active" data-tab="overview">Overview</button>
+            <button class="sidepanel-tab" data-tab="hints">Hints</button>
+            <button class="sidepanel-tab" data-tab="debug">Debug</button>
+            <button class="sidepanel-tab" data-tab="review">Review</button>
+            <button class="sidepanel-tab" data-tab="settings">⚙️</button>
+        </div>
+
+        <div class="sidepanel-content">
+            <!-- Overview Tab -->
+            <div class="sidepanel-tab-content active" data-tab-content="overview">
+                <div class="problem-info" id="problem-info">
+                    <p class="no-problem">Navigate to a LeetCode problem to get started.</p>
+                </div>
+                <button class="action-btn" data-action="explain">
+                    💡 Explain this problem
+                </button>
+            </div>
+
+            <!-- Hints Tab -->
+            <div class="sidepanel-tab-content" data-tab-content="hints">
+                <div class="hint-style-selector">
+                    <label>Hint Style:</label>
+                    <select id="hint-style">
+                        <option value="socratic">Socratic (Questions)</option>
+                        <option value="progressive" selected>Progressive Hints</option>
+                        <option value="direct">More Direct</option>
+                    </select>
+                </div>
+                <button class="action-btn" data-action="hint">
+                    🔍 Get Hint
+                </button>
+            </div>
+
+            <!-- Debug Tab -->
+            <div class="sidepanel-tab-content" data-tab-content="debug">
+                <div class="debug-info">
+                    <div class="last-run">
+                        <strong>Last Run:</strong>
+                        <span id="last-run-status">No run yet</span>
+                    </div>
+                </div>
+                <button class="action-btn" data-action="debug">
+                    🐛 Why is this failing?
+                </button>
+            </div>
+
+            <!-- Review Tab -->
+            <div class="sidepanel-tab-content" data-tab-content="review">
+                <p class="description">
+                    Get feedback on your code's correctness, efficiency, and style.
+                </p>
+                <button class="action-btn" data-action="review">
+                    📝 Review my solution
+                </button>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="sidepanel-tab-content" data-tab-content="settings">
+                <div class="settings-form">
+                    <div class="settings-group">
+                        <label>Provider</label>
+                        <select id="settings-provider">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="google">Google Gemini</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="settings-group">
+                        <label>API Key</label>
+                        <input type="password" id="settings-apikey" placeholder="sk-...">
+                    </div>
+                    <div class="settings-group">
+                        <label>Model</label>
+                        <input type="text" id="settings-model" placeholder="gpt-4o">
+                    </div>
+                    <div class="settings-group" id="baseurl-group" style="display:none;">
+                        <label>Base URL</label>
+                        <input type="text" id="settings-baseurl" placeholder="https://api.example.com/v1">
+                    </div>
+                    <div class="settings-group">
+                        <label>Panel Mode</label>
+                        <select id="settings-panelmode">
+                            <option value="popup">Floating Popup</option>
+                            <option value="sidebar">Injected Sidebar</option>
+                            <option value="sidepanel" selected>Chrome Side Panel</option>
+                        </select>
+                        <p class="settings-hint">Changes take effect on page refresh</p>
+                    </div>
+                    <button class="action-btn" id="save-settings-btn">
+                        💾 Save Settings
+                    </button>
+                    <div id="settings-status" class="settings-status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reasoning Effort Control -->
+        <div class="reasoning-control">
+            <label>Reasoning:</label>
+            <select id="reasoning-effort">
+                <option value="low">Low (Faster)</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High (Deeper)</option>
+            </select>
+        </div>
+
+        <!-- Response Area -->
+        <div class="response-area">
+            <div class="response-header">
+                <span>Response</span>
+                <div class="response-actions">
+                    <button class="icon-btn copy-btn" title="Copy">📋</button>
+                    <button class="icon-btn clear-btn" title="Clear History">🗑️</button>
+                </div>
+            </div>
+            <div class="response-content" id="response-content">
+                <p class="placeholder">Click a button above to get AI coaching assistance.</p>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <span>Thinking...</span>
+        </div>
+
+        <!-- Error Display -->
+        <div class="error" id="error" style="display: none;"></div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+</body>
+</html>

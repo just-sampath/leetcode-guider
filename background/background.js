@@ -10,7 +10,8 @@ import { buildPrompt } from './PromptBuilder.js';
 import {
     loadSettings,
     getConversationHistory,
-    saveConversationHistory
+    saveConversationHistory,
+    updateSetting
 } from './SettingsService.js';
 
 /**
@@ -19,7 +20,9 @@ import {
 const MESSAGE_TYPES = {
     GET_AI_RESPONSE: 'GET_AI_RESPONSE',
     GET_SETTINGS: 'GET_SETTINGS',
-    CLEAR_HISTORY: 'CLEAR_HISTORY'
+    GET_HISTORY: 'GET_HISTORY',
+    CLEAR_HISTORY: 'CLEAR_HISTORY',
+    UPDATE_SETTING: 'UPDATE_SETTING'
 };
 
 /**
@@ -54,8 +57,16 @@ async function handleMessage(request, sender) {
         case MESSAGE_TYPES.GET_SETTINGS:
             return loadSettings();
 
+        case MESSAGE_TYPES.GET_HISTORY:
+            const history = await getConversationHistory(payload.problemSlug);
+            return { history };
+
         case MESSAGE_TYPES.CLEAR_HISTORY:
             await saveConversationHistory(payload.problemSlug, []);
+            return { success: true };
+
+        case MESSAGE_TYPES.UPDATE_SETTING:
+            await updateSetting(payload.key, payload.value);
             return { success: true };
 
         default:
@@ -127,3 +138,4 @@ async function handleAiRequest(payload) {
 
 // Log when service worker starts
 console.log('[LeetCode AI Coach] Background service worker started');
+

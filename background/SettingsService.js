@@ -33,6 +33,8 @@ const DEFAULT_SETTINGS = {
     reasoningEffort: 'medium',
     persona: '',
     panelPosition: 'right',
+    panelMode: 'popup', // 'popup' | 'sidebar' | 'sidepanel'
+    sidebarWidth: 380,
     conversationHistory: {} // Keyed by problem slug
 };
 

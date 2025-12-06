@@ -1,321 +1,523 @@
 /**
  * LeetCode AI Coach - Panel Styles
  * 
- * Dark theme to match LeetCode's design
+ * Premium dark theme matching LeetCode's design language
+ * with glassmorphism effects and micro-animations
  */
 
-/* Container */
+/* ============================================
+   CSS Variables - Design Tokens
+   ============================================ */
 #lc-ai-coach-container {
+  /* Colors */
+  --lc-bg-primary: #1a1a1a;
+  --lc-bg-secondary: #262626;
+  --lc-bg-elevated: #2d2d2d;
+  --lc-bg-hover: #333333;
+
+  /* Accent Colors */
+  --lc-accent: #ffa116;
+  --lc-accent-hover: #ffb340;
+  --lc-accent-glow: rgba(255, 161, 22, 0.15);
+  --lc-accent-subtle: rgba(255, 161, 22, 0.08);
+
+  /* Text Colors */
+  --lc-text-primary: #ffffff;
+  --lc-text-secondary: #e0e0e0;
+  --lc-text-muted: #888888;
+  --lc-text-disabled: #555555;
+
+  /* Status Colors */
+  --lc-success: #00b8a3;
+  --lc-warning: #ffc01e;
+  --lc-error: #ff375f;
+  --lc-info: #6366f1;
+
+  /* Borders & Effects */
+  --lc-border: rgba(255, 255, 255, 0.08);
+  --lc-border-strong: rgba(255, 255, 255, 0.12);
+  --lc-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --lc-shadow-glow: 0 0 20px rgba(255, 161, 22, 0.1);
+
+  /* Transitions */
+  --lc-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --lc-transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --lc-transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Radius */
+  --lc-radius-sm: 6px;
+  --lc-radius-md: 10px;
+  --lc-radius-lg: 14px;
+
+  /* Typography */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   line-height: 1.5;
 }
 
-/* Main Panel */
+/* ============================================
+   Main Panel - Glassmorphism Container
+   ============================================ */
 .lc-ai-coach-panel {
   position: fixed;
   top: 80px;
-  right: 16px;
-  width: 360px;
+  right: 20px;
+  width: 380px;
   max-height: calc(100vh - 100px);
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg,
+      rgba(30, 30, 30, 0.95) 0%,
+      rgba(26, 26, 26, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--lc-border-strong);
+  border-radius: var(--lc-radius-lg);
+  box-shadow:
+    var(--lc-shadow),
+    var(--lc-shadow-glow),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   z-index: 10000;
   overflow: hidden;
-  color: #e0e0e0;
+  color: var(--lc-text-secondary);
 }
 
-/* Header */
+/* ============================================
+   Header - Premium Gradient with Glow
+   ============================================ */
 .lc-ai-coach-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-  border-bottom: 1px solid #333;
+  padding: 14px 18px;
+  background: linear-gradient(135deg,
+      rgba(45, 45, 45, 0.9) 0%,
+      rgba(30, 30, 30, 0.95) 100%);
+  border-bottom: 1px solid var(--lc-border);
+  position: relative;
+}
+
+.lc-ai-coach-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      var(--lc-accent-glow) 50%,
+      transparent 100%);
 }
 
 .lc-ai-coach-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 600;
   font-size: 16px;
-  color: #fff;
+  color: var(--lc-text-primary);
 }
 
 .lc-ai-coach-icon {
-  font-size: 20px;
+  font-size: 22px;
+  filter: drop-shadow(0 0 8px rgba(255, 161, 22, 0.3));
 }
 
 .lc-ai-coach-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .lc-ai-coach-header-actions button {
-  background: none;
-  border: none;
-  font-size: 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 15px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
+  padding: 6px 10px;
+  border-radius: var(--lc-radius-sm);
+  transition: all var(--lc-transition-fast);
+  color: var(--lc-text-muted);
 }
 
 .lc-ai-coach-header-actions button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--lc-bg-hover);
+  border-color: var(--lc-border);
+  color: var(--lc-text-primary);
 }
 
-/* Tabs */
+/* ============================================
+   Tabs - Sleek Navigation
+   ============================================ */
 .lc-ai-coach-tabs {
   display: flex;
-  background: #242424;
-  border-bottom: 1px solid #333;
+  background: var(--lc-bg-secondary);
+  border-bottom: 1px solid var(--lc-border);
+  padding: 0 4px;
 }
 
 .lc-ai-coach-tab {
   flex: 1;
-  padding: 10px 12px;
-  background: none;
+  padding: 12px 8px;
+  background: transparent;
   border: none;
-  color: #888;
+  color: var(--lc-text-muted);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--lc-transition-normal);
   border-bottom: 2px solid transparent;
+  position: relative;
 }
 
 .lc-ai-coach-tab:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--lc-text-primary);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .lc-ai-coach-tab.active {
-  color: #ffa116;
-  border-bottom-color: #ffa116;
+  color: var(--lc-accent);
+  border-bottom-color: var(--lc-accent);
 }
 
-/* Content */
+.lc-ai-coach-tab.active::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 2px;
+  background: var(--lc-accent);
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--lc-accent);
+}
+
+/* ============================================
+   Content Area
+   ============================================ */
 .lc-ai-coach-content {
-  padding: 16px;
+  padding: 18px;
   flex-shrink: 0;
 }
 
 .lc-ai-coach-tab-content {
   display: none;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .lc-ai-coach-tab-content.active {
   display: block;
 }
 
-/* Problem Info */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Problem Info Card
+   ============================================ */
 .lc-ai-coach-problem-info {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--lc-bg-elevated);
+  border-radius: var(--lc-radius-md);
+  border: 1px solid var(--lc-border);
 }
 
 .lc-ai-coach-problem-title {
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
-  margin-bottom: 6px;
+  color: var(--lc-text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .lc-ai-coach-problem-meta {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   font-size: 12px;
 }
 
 .lc-ai-coach-difficulty {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .lc-ai-coach-difficulty.easy {
-  background: #00b8a3;
+  background: linear-gradient(135deg, #00b8a3 0%, #00a693 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 184, 163, 0.3);
 }
 
 .lc-ai-coach-difficulty.medium {
-  background: #ffc01e;
-  color: #000;
+  background: linear-gradient(135deg, #ffc01e 0%, #f5b000 100%);
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px rgba(255, 192, 30, 0.3);
 }
 
 .lc-ai-coach-difficulty.hard {
-  background: #ff375f;
+  background: linear-gradient(135deg, #ff375f 0%, #e62e52 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 55, 95, 0.3);
 }
 
 .lc-ai-coach-topics {
-  color: #888;
+  color: var(--lc-text-muted);
+  font-style: italic;
 }
 
-/* Action Buttons */
+/* ============================================
+   Action Buttons - Premium CTA
+   ============================================ */
 .lc-ai-coach-action-btn {
   width: 100%;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #ffa116 0%, #ff8c00 100%);
+  padding: 12px 18px;
+  background: linear-gradient(135deg, var(--lc-accent) 0%, #ff8c00 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--lc-radius-md);
   color: #000;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 8px;
+  transition: all var(--lc-transition-normal);
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.lc-ai-coach-action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 100%);
+  transition: left 0.5s ease;
+}
+
+.lc-ai-coach-action-btn:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .lc-ai-coach-action-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 161, 22, 0.3);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(255, 161, 22, 0.35),
+    0 0 0 1px rgba(255, 161, 22, 0.1);
+}
+
+.lc-ai-coach-action-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .lc-ai-coach-action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Hint Style Selector */
+/* ============================================
+   Form Controls - Hint Style & Selectors
+   ============================================ */
 .lc-ai-coach-hint-style {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .lc-ai-coach-hint-style label {
-  color: #888;
+  color: var(--lc-text-muted);
   font-size: 13px;
+  font-weight: 500;
 }
 
 .lc-ai-coach-hint-style select {
   flex: 1;
-  padding: 6px 10px;
-  background: #2d2d2d;
-  border: 1px solid #444;
-  border-radius: 6px;
-  color: #fff;
+  padding: 8px 12px;
+  background: var(--lc-bg-elevated);
+  border: 1px solid var(--lc-border-strong);
+  border-radius: var(--lc-radius-sm);
+  color: var(--lc-text-primary);
   font-size: 13px;
   cursor: pointer;
+  transition: border-color var(--lc-transition-fast);
 }
 
-/* Debug Info */
+.lc-ai-coach-hint-style select:hover {
+  border-color: var(--lc-accent);
+}
+
+.lc-ai-coach-hint-style select:focus {
+  outline: none;
+  border-color: var(--lc-accent);
+  box-shadow: 0 0 0 2px var(--lc-accent-subtle);
+}
+
+/* ============================================
+   Debug Info Panel
+   ============================================ */
 .lc-ai-coach-debug-info {
-  margin-bottom: 12px;
-  padding: 10px;
-  background: #2d2d2d;
-  border-radius: 8px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--lc-bg-elevated);
+  border-radius: var(--lc-radius-md);
+  border: 1px solid var(--lc-border);
 }
 
 .lc-ai-coach-last-run {
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .status-accepted {
-  color: #00b8a3;
+  color: var(--lc-success);
+  font-weight: 600;
 }
 
 .status-wrong {
-  color: #ff375f;
+  color: var(--lc-error);
+  font-weight: 600;
 }
 
 .status-error {
-  color: #ff8c00;
+  color: var(--lc-warning);
+  font-weight: 600;
 }
 
 /* Description */
 .lc-ai-coach-description {
-  color: #888;
+  color: var(--lc-text-muted);
   font-size: 13px;
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
+  line-height: 1.5;
 }
 
-/* Reasoning Effort */
+/* ============================================
+   Reasoning Effort Control
+   ============================================ */
 .lc-ai-coach-reasoning {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #242424;
-  border-top: 1px solid #333;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--lc-bg-secondary);
+  border-top: 1px solid var(--lc-border);
 }
 
 .lc-ai-coach-reasoning label {
-  color: #888;
+  color: var(--lc-text-muted);
   font-size: 12px;
+  font-weight: 500;
 }
 
 .lc-ai-coach-reasoning select {
   flex: 1;
-  padding: 4px 8px;
-  background: #2d2d2d;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #fff;
+  padding: 6px 10px;
+  background: var(--lc-bg-elevated);
+  border: 1px solid var(--lc-border-strong);
+  border-radius: var(--lc-radius-sm);
+  color: var(--lc-text-primary);
   font-size: 12px;
   cursor: pointer;
+  transition: border-color var(--lc-transition-fast);
 }
 
-/* Response Area */
+.lc-ai-coach-reasoning select:hover,
+.lc-ai-coach-reasoning select:focus {
+  border-color: var(--lc-accent);
+  outline: none;
+}
+
+/* ============================================
+   Response Area - Clean & Readable
+   ============================================ */
 .lc-ai-coach-response {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 150px;
   max-height: 350px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--lc-border);
 }
 
 .lc-ai-coach-response-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  background: #242424;
+  padding: 10px 18px;
+  background: var(--lc-bg-secondary);
   font-size: 12px;
-  color: #888;
+  font-weight: 500;
+  color: var(--lc-text-muted);
 }
 
 .lc-ai-coach-response-header button {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   font-size: 14px;
-  padding: 2px;
+  padding: 4px 6px;
+  border-radius: var(--lc-radius-sm);
+  transition: all var(--lc-transition-fast);
+  opacity: 0.7;
+}
+
+.lc-ai-coach-response-header button:hover {
+  background: var(--lc-bg-hover);
+  opacity: 1;
 }
 
 .lc-ai-coach-response-content {
   flex: 1;
-  padding: 12px 16px;
+  padding: 14px 18px;
   overflow-y: auto;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .lc-ai-coach-placeholder {
-  color: #666;
+  color: var(--lc-text-disabled);
   text-align: center;
-  margin: 20px 0;
+  margin: 30px 0;
+  font-style: italic;
 }
 
-/* Markdown Rendering */
+/* ============================================
+   Markdown Rendering
+   ============================================ */
 .lc-ai-coach-response-content h2,
 .lc-ai-coach-response-content h3,
 .lc-ai-coach-response-content h4 {
-  color: #fff;
-  margin: 12px 0 8px 0;
+  color: var(--lc-text-primary);
+  margin: 14px 0 8px 0;
+  font-weight: 600;
 }
 
 .lc-ai-coach-response-content h2 {
   font-size: 16px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--lc-border);
 }
 
 .lc-ai-coach-response-content h3 {
@@ -327,61 +529,78 @@
 }
 
 .lc-ai-coach-code {
-  background: #2d2d2d;
-  padding: 12px;
-  border-radius: 6px;
+  background: var(--lc-bg-elevated);
+  padding: 14px;
+  border-radius: var(--lc-radius-md);
   overflow-x: auto;
-  margin: 8px 0;
-  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  margin: 10px 0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
   font-size: 12px;
+  border: 1px solid var(--lc-border);
 }
 
 .lc-ai-coach-inline-code {
-  background: #2d2d2d;
-  padding: 2px 6px;
+  background: var(--lc-bg-elevated);
+  padding: 2px 8px;
   border-radius: 4px;
-  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
   font-size: 12px;
+  color: var(--lc-accent);
 }
 
-/* Thinking Section */
+/* ============================================
+   Thinking Section - AI Reasoning
+   ============================================ */
 .lc-ai-coach-thinking {
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #2a2a35;
-  border-radius: 8px;
-  border-left: 3px solid #6366f1;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #2a2a38 0%, #252530 100%);
+  border-radius: var(--lc-radius-md);
+  border-left: 3px solid var(--lc-info);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-left-width: 3px;
 }
 
 .lc-ai-coach-thinking summary {
   cursor: pointer;
   color: #a5a6f6;
   font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lc-ai-coach-thinking summary:hover {
+  color: #c4c5ff;
 }
 
 .lc-ai-coach-thinking-content {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #444;
-  color: #aaa;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(99, 102, 241, 0.15);
+  color: var(--lc-text-muted);
   font-size: 12px;
+  line-height: 1.6;
 }
 
-/* Loading */
+/* ============================================
+   Loading Indicator - Animated
+   ============================================ */
 .lc-ai-coach-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 20px;
-  color: #ffa116;
+  gap: 12px;
+  padding: 24px;
+  color: var(--lc-accent);
 }
 
 .lc-ai-coach-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #333;
-  border-top-color: #ffa116;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--lc-bg-hover);
+  border-top-color: var(--lc-accent);
   border-radius: 50%;
   animation: lc-spin 0.8s linear infinite;
 }
@@ -392,97 +611,291 @@
   }
 }
 
-/* Error */
+/* ============================================
+   Error Display
+   ============================================ */
 .lc-ai-coach-error {
-  padding: 12px 16px;
-  background: #3d1f1f;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #3d1f1f 0%, #2d1a1a 100%);
   color: #ff6b6b;
   font-size: 13px;
   border-top: 1px solid #5c2a2a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Toggle Button */
+.lc-ai-coach-error::before {
+  content: '⚠️';
+}
+
+/* ============================================
+   Toggle Button - Floating FAB
+   ============================================ */
 .lc-ai-coach-toggle {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
+  bottom: 24px;
+  right: 24px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffa116 0%, #ff8c00 100%);
+  background: linear-gradient(135deg, var(--lc-accent) 0%, #ff8c00 100%);
   border: none;
-  font-size: 24px;
+  font-size: 26px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(255, 161, 22, 0.4);
+  box-shadow:
+    0 4px 20px rgba(255, 161, 22, 0.4),
+    0 0 0 0 rgba(255, 161, 22, 0.3);
   z-index: 10001;
-  transition: transform 0.2s;
+  transition: all var(--lc-transition-normal);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 4px 20px rgba(255, 161, 22, 0.4), 0 0 0 0 rgba(255, 161, 22, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 4px 20px rgba(255, 161, 22, 0.5), 0 0 0 8px rgba(255, 161, 22, 0);
+  }
 }
 
 .lc-ai-coach-toggle:hover {
   transform: scale(1.1);
+  animation: none;
+  box-shadow: 0 6px 24px rgba(255, 161, 22, 0.5);
 }
 
-/* Scrollbar */
+.lc-ai-coach-toggle:active {
+  transform: scale(1.05);
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
 .lc-ai-coach-response-content::-webkit-scrollbar {
   width: 6px;
 }
 
 .lc-ai-coach-response-content::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: var(--lc-bg-primary);
+  border-radius: 3px;
 }
 
 .lc-ai-coach-response-content::-webkit-scrollbar-thumb {
-  background: #444;
+  background: var(--lc-bg-hover);
   border-radius: 3px;
+  transition: background var(--lc-transition-fast);
 }
 
 .lc-ai-coach-response-content::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 
-/* Settings Form */
+/* ============================================
+   Settings Form
+   ============================================ */
 .lc-ai-coach-settings-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .lc-settings-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .lc-settings-group label {
   font-size: 11px;
-  color: #888;
+  color: var(--lc-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 500;
 }
 
 .lc-settings-group input,
 .lc-settings-group select {
-  padding: 8px 10px;
-  background: #2d2d2d;
-  border: 1px solid #444;
-  border-radius: 6px;
-  color: #fff;
+  padding: 10px 12px;
+  background: var(--lc-bg-elevated);
+  border: 1px solid var(--lc-border-strong);
+  border-radius: var(--lc-radius-sm);
+  color: var(--lc-text-primary);
   font-size: 13px;
+  transition: all var(--lc-transition-fast);
+}
+
+.lc-settings-group input:hover,
+.lc-settings-group select:hover {
+  border-color: var(--lc-accent);
 }
 
 .lc-settings-group input:focus,
 .lc-settings-group select:focus {
   outline: none;
-  border-color: #ffa116;
+  border-color: var(--lc-accent);
+  box-shadow: 0 0 0 2px var(--lc-accent-subtle);
 }
 
 .lc-settings-group input::placeholder {
-  color: #666;
+  color: var(--lc-text-disabled);
 }
 
 .lc-settings-status {
   text-align: center;
   font-size: 12px;
   min-height: 18px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.lc-settings-hint {
+  font-size: 11px;
+  color: var(--lc-text-disabled);
   margin-top: 4px;
+  font-style: italic;
+}
+
+/* ============================================
+   Sidebar Mode Overrides
+   ============================================ */
+.lc-ai-coach-sidebar-mode .lc-ai-coach-panel {
+  transition: transform var(--lc-transition-slow);
+}
+
+.lc-ai-coach-collapse-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--lc-radius-sm);
+  transition: all var(--lc-transition-fast);
+  color: var(--lc-text-muted);
+}
+
+.lc-ai-coach-collapse-btn:hover {
+  background: var(--lc-bg-hover);
+  border-color: var(--lc-border);
+  color: var(--lc-text-primary);
+}
+
+.lc-ai-coach-resize-handle:hover {
+  background: rgba(255, 161, 22, 0.2) !important;
+}
+
+/* ============================================
+   Chat History Indicator
+   ============================================ */
+.lc-ai-coach-history-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #2a2a38 0%, #252530 100%);
+  border-radius: var(--lc-radius-md);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.lc-ai-coach-history-indicator span {
+  font-size: 12px;
+  color: #a5a6f6;
+  font-weight: 500;
+}
+
+.lc-ai-coach-last-response {
+  padding-top: 10px;
+  border-top: 1px solid var(--lc-border);
+  margin-top: 10px;
+}
+
+/* ============================================
+   Collapsed Sidebar Tab
+   ============================================ */
+.lc-ai-coach-collapsed-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--lc-accent) 0%, #ff8c00 100%);
+  border: none;
+  border-radius: 8px 0 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow:
+    -4px 0 20px rgba(255, 161, 22, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  z-index: 10001;
+  transition: all 0.2s ease;
+}
+
+.lc-ai-coach-collapsed-tab:hover {
+  width: 48px;
+  box-shadow: -6px 0 24px rgba(255, 161, 22, 0.4);
+}
+
+.lc-ai-coach-collapsed-tab:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* ============================================
+   Markdown Lists and Paragraphs
+   ============================================ */
+.lc-ai-list {
+  margin: 10px 0;
+  padding-left: 24px;
+  color: var(--lc-text-secondary);
+}
+
+.lc-ai-list li {
+  margin: 6px 0;
+  line-height: 1.6;
+}
+
+.lc-ai-paragraph {
+  margin: 0 0 12px 0;
+  line-height: 1.7;
+}
+
+.lc-ai-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   Sidebar Mode - Responsive Full Height
+   ============================================ */
+.lc-ai-coach-sidebar-mode .lc-ai-coach-panel {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.lc-ai-coach-sidebar-mode .lc-ai-coach-content {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.lc-ai-coach-sidebar-mode .lc-ai-coach-response {
+  flex: 1 1 auto !important;
+  min-height: 0;
+  max-height: none !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.lc-ai-coach-sidebar-mode .lc-ai-coach-response-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
 }
