@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS = {
     panelPosition: 'right',
     panelMode: 'popup', // 'popup' | 'sidebar' | 'sidepanel'
     sidebarWidth: 380,
+    openOnPageLoad: false, // Whether to auto-open panel when page loads
     conversationHistory: {} // Keyed by problem slug
 };
 
