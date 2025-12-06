@@ -658,11 +658,17 @@ const UiPanel = (function () {
       messageContent = `💭 **Model Thinking:**\n${response.thinking}\n\n---\n\n${messageContent}`;
     }
 
+    // Inject styles if not present
+    window.ChatRenderer.injectStyles(document);
+
     // Use ChatRenderer to append the new message
     window.ChatRenderer.appendMessage(contentEl, {
       role: 'assistant',
       content: messageContent
     });
+
+    // Ensure event listeners are set up for toggle buttons
+    window.ChatRenderer.setupEventListeners(contentEl, handleFollowUpMessage);
   }
 
   /**

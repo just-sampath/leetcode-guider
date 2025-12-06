@@ -266,6 +266,10 @@ const ChatRenderer = (function () {
   function setupEventListeners(container, onSendMessage) {
     if (!container) return;
 
+    // Prevent duplicate event listeners
+    if (container.dataset.chatListenersAttached) return;
+    container.dataset.chatListenersAttached = 'true';
+
     // Toggle button clicks
     container.addEventListener('click', (e) => {
       const toggleBtn = e.target.closest(`.${PREFIX}-message-toggle`);
@@ -428,6 +432,16 @@ const ChatRenderer = (function () {
 
       .${PREFIX}-message.collapsed {
         opacity: 0.9;
+      }
+
+      /* Expanded state - ensure content is visible */
+      .${PREFIX}-message:not(.collapsed) .${PREFIX}-message-content {
+        max-height: none;
+        overflow: visible;
+      }
+
+      .${PREFIX}-message:not(.collapsed) .${PREFIX}-message-content::after {
+        display: none;
       }
 
       /* ============================================

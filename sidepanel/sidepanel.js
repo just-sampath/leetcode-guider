@@ -358,6 +358,9 @@ function displayResponse(response) {
         role: 'assistant',
         content: messageContent
     });
+
+    // Ensure event listeners are set up for toggle buttons
+    ChatRenderer.setupEventListeners(contentEl, handleFollowUpMessage);
 }
 
 /**
