@@ -168,6 +168,7 @@ const UiPanel = (function () {
           <div class="lc-ai-coach-response-header">
             <span>Response</span>
             <button class="lc-ai-coach-copy-btn" title="Copy">📋</button>
+            <button class="lc-ai-coach-import-btn" title="Import Context from Other Mode">📥</button>
             <button class="lc-ai-coach-clear-btn" title="Clear History">🗑️</button>
           </div>
           <div class="lc-ai-coach-response-content">
@@ -452,6 +453,9 @@ const UiPanel = (function () {
     // Clear history button
     document.querySelector('.lc-ai-coach-clear-btn')?.addEventListener('click', clearHistory);
 
+    // Import context button
+    document.querySelector('.lc-ai-coach-import-btn')?.addEventListener('click', showImportModal);
+
     // Reasoning effort change
     document.getElementById('lc-reasoning-effort')?.addEventListener('change', (e) => {
       updateReasoningEffort(e.target.value);
@@ -501,6 +505,11 @@ const UiPanel = (function () {
     document.querySelectorAll('.lc-ai-coach-tab-content').forEach(content => {
       content.classList.toggle('active', content.dataset.tabContent === tabName);
     });
+
+    // Load mode-specific chat history when switching to a content tab
+    if (['overview', 'hints', 'debug', 'review'].includes(tabName)) {
+      loadChatHistory(tabName);
+    }
   }
 
   /**
@@ -770,11 +779,12 @@ const UiPanel = (function () {
    */
   async function clearHistory() {
     const slug = window.LeetCodeDomAdapter.extractSlugFromUrl();
+    const mode = currentTab === 'settings' ? 'overview' : currentTab;
 
     try {
       await chrome.runtime.sendMessage({
         type: 'CLEAR_HISTORY',
-        payload: { problemSlug: slug }
+        payload: { problemSlug: slug, mode }
       });
 
       // Clear response display but keep input
@@ -789,20 +799,203 @@ const UiPanel = (function () {
     }
   }
 
+  /**
+   * Show import context modal
+   */
+  async function showImportModal() {
+    const slug = window.LeetCodeDomAdapter.extractSlugFromUrl();
+    const currentMode = currentTab === 'settings' ? 'overview' : currentTab;
+
+    try {
+      // Get available modes with history
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_MODE_HISTORIES',
+        payload: { problemSlug: slug }
+      });
+
+      const modeHistories = response.modeHistories || [];
+
+      // Filter out current mode
+      const otherModes = modeHistories.filter(m => m.mode !== currentMode);
+
+      if (otherModes.length === 0) {
+        alert('No conversation history available from other modes to import.');
+        return;
+      }
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.id = 'lc-import-modal';
+      modal.className = 'lc-import-modal';
+      modal.innerHTML = `
+        <div class="lc-import-modal-content">
+          <div class="lc-import-modal-header">
+            <h3>📥 Import Context</h3>
+            <button class="lc-import-modal-close">×</button>
+          </div>
+          <p>Select a mode to import conversation history from:</p>
+          <div class="lc-import-mode-list">
+            ${otherModes.map(m => `
+              <button class="lc-import-mode-btn" data-mode="${m.mode}">
+                ${getModeIcon(m.mode)} ${m.mode.charAt(0).toUpperCase() + m.mode.slice(1)}
+                <span class="lc-import-mode-count">(${m.messageCount} messages)</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      // Add styles for modal
+      const style = document.createElement('style');
+      style.id = 'lc-import-modal-styles';
+      style.textContent = `
+        .lc-import-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 100001;
+        }
+        .lc-import-modal-content {
+          background: var(--lc-bg-panel, #1a1a1a);
+          border-radius: 12px;
+          padding: 20px;
+          max-width: 400px;
+          width: 90%;
+          border: 1px solid var(--lc-border, rgba(255,255,255,0.1));
+        }
+        .lc-import-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+        .lc-import-modal-header h3 {
+          margin: 0;
+          color: var(--lc-text-primary, #fff);
+        }
+        .lc-import-modal-close {
+          background: none;
+          border: none;
+          color: var(--lc-text-muted, #888);
+          font-size: 24px;
+          cursor: pointer;
+          padding: 0;
+          line-height: 1;
+        }
+        .lc-import-modal-close:hover {
+          color: var(--lc-text-primary, #fff);
+        }
+        .lc-import-modal p {
+          color: var(--lc-text-secondary, #aaa);
+          margin-bottom: 16px;
+        }
+        .lc-import-mode-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .lc-import-mode-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 16px;
+          background: var(--lc-bg-elevated, #2d2d2d);
+          border: 1px solid var(--lc-border, rgba(255,255,255,0.1));
+          border-radius: 8px;
+          color: var(--lc-text-primary, #fff);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .lc-import-mode-btn:hover {
+          background: var(--lc-bg-hover, #333);
+          border-color: var(--lc-accent, #ffa116);
+        }
+        .lc-import-mode-count {
+          color: var(--lc-text-muted, #888);
+          margin-left: auto;
+          font-size: 12px;
+        }
+      `;
+
+      if (!document.getElementById('lc-import-modal-styles')) {
+        document.head.appendChild(style);
+      }
+      document.body.appendChild(modal);
+
+      // Event listeners
+      modal.querySelector('.lc-import-modal-close').addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
+
+      modal.querySelectorAll('.lc-import-mode-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await handleImportContext(btn.dataset.mode, currentMode);
+          modal.remove();
+        });
+      });
+    } catch (error) {
+      console.error('[UiPanel] Failed to show import modal:', error);
+    }
+  }
+
+  /**
+   * Get icon for mode
+   */
+  function getModeIcon(mode) {
+    const icons = {
+      overview: '💡',
+      hints: '🔍',
+      debug: '🐛',
+      review: '📝'
+    };
+    return icons[mode] || '💬';
+  }
+
+  /**
+   * Handle importing context from one mode to another
+   */
+  async function handleImportContext(fromMode, toMode) {
+    const slug = window.LeetCodeDomAdapter.extractSlugFromUrl();
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'IMPORT_HISTORY',
+        payload: { problemSlug: slug, fromMode, toMode }
+      });
+
+      if (response.success) {
+        // Reload chat history to show imported messages
+        await loadChatHistory(toMode);
+        console.log(`[UiPanel] Imported ${response.importedCount} messages from ${fromMode} to ${toMode}`);
+      } else {
+        console.error('[UiPanel] Import failed:', response.error);
+        alert('Failed to import context: ' + response.error);
+      }
+    } catch (error) {
+      console.error('[UiPanel] Failed to import context:', error);
+    }
+  }
 
 
   /**
    * Load and display chat history for current problem
    * Uses ChatRenderer for consistent rendering with collapsible messages
    */
-  async function loadChatHistory() {
+  async function loadChatHistory(mode = 'overview') {
     try {
       const slug = window.LeetCodeDomAdapter.extractSlugFromUrl();
       if (!slug) return;
 
       const response = await chrome.runtime.sendMessage({
         type: 'GET_HISTORY',
-        payload: { problemSlug: slug }
+        payload: { problemSlug: slug, mode }
       });
 
       const history = response.history || [];
@@ -995,8 +1188,8 @@ const UiPanel = (function () {
         panelModeEl.value = response.panelMode;
       }
 
-      // Load chat history for this problem
-      await loadChatHistory();
+      // Load chat history for this problem (use current tab as mode)
+      await loadChatHistory(currentTab === 'settings' ? 'overview' : currentTab);
     } catch (error) {
       console.error('[UiPanel] Failed to load settings:', error);
     }

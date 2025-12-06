@@ -11,6 +11,7 @@ import {
     loadSettings,
     getConversationHistory,
     saveConversationHistory,
+    getModeHistories,
     updateSetting
 } from './SettingsService.js';
 
@@ -22,7 +23,9 @@ const MESSAGE_TYPES = {
     GET_SETTINGS: 'GET_SETTINGS',
     GET_HISTORY: 'GET_HISTORY',
     CLEAR_HISTORY: 'CLEAR_HISTORY',
-    UPDATE_SETTING: 'UPDATE_SETTING'
+    UPDATE_SETTING: 'UPDATE_SETTING',
+    GET_MODE_HISTORIES: 'GET_MODE_HISTORIES',
+    IMPORT_HISTORY: 'IMPORT_HISTORY'
 };
 
 /**
@@ -58,12 +61,19 @@ async function handleMessage(request, sender) {
             return loadSettings();
 
         case MESSAGE_TYPES.GET_HISTORY:
-            const history = await getConversationHistory(payload.problemSlug);
+            const history = await getConversationHistory(payload.problemSlug, payload.mode || 'overview');
             return { history };
 
         case MESSAGE_TYPES.CLEAR_HISTORY:
-            await saveConversationHistory(payload.problemSlug, []);
+            await saveConversationHistory(payload.problemSlug, payload.mode || 'overview', []);
             return { success: true };
+
+        case MESSAGE_TYPES.GET_MODE_HISTORIES:
+            const modeHistories = await getModeHistories(payload.problemSlug);
+            return { modeHistories };
+
+        case MESSAGE_TYPES.IMPORT_HISTORY:
+            return handleImportHistory(payload);
 
         case MESSAGE_TYPES.UPDATE_SETTING:
             await updateSetting(payload.key, payload.value);
@@ -91,9 +101,12 @@ async function handleAiRequest(payload) {
         throw new Error(`No API key configured for ${settings.provider}. Please set it in extension options.`);
     }
 
-    // Get conversation history
+    // Determine effective mode (follow-ups inherit from their parent mode)
+    const effectiveMode = mode === 'followup' ? 'overview' : mode; // Will be updated from metadata
+
+    // Get conversation history for this mode
     const problemSlug = problemContext.urlSlug || 'unknown';
-    const history = await getConversationHistory(problemSlug);
+    const history = await getConversationHistory(problemSlug, effectiveMode);
 
     // Determine lastMode and lastHintStyle from history metadata
     // We store these in the first user message of each exchange
@@ -101,7 +114,7 @@ async function handleAiRequest(payload) {
     let lastHintStyle = null;
 
     // Look for the last mode from history (we store metadata in the history)
-    const historyMeta = await getHistoryMetadata(problemSlug);
+    const historyMeta = await getHistoryMetadata(problemSlug, effectiveMode);
     if (historyMeta) {
         lastMode = historyMeta.lastMode;
         lastHintStyle = historyMeta.lastHintStyle;
@@ -152,14 +165,15 @@ async function handleAiRequest(payload) {
 
     // Keep history manageable (last 20 exchanges)
     const trimmedHistory = newHistory.slice(-40);
-    await saveConversationHistory(problemSlug, trimmedHistory);
+    const storageMode = mode === 'followup' ? (lastMode || 'overview') : mode;
+    await saveConversationHistory(problemSlug, storageMode, trimmedHistory);
 
     // Save metadata about the current mode (for follow-ups to inherit)
-    const effectiveMode = mode === 'followup' ? (lastMode || 'overview') : mode;
-    const effectiveHintStyle = mode === 'followup' ? lastHintStyle : hintStyle;
-    await saveHistoryMetadata(problemSlug, {
-        lastMode: effectiveMode,
-        lastHintStyle: effectiveHintStyle
+    const finalEffectiveMode = mode === 'followup' ? (lastMode || 'overview') : mode;
+    const finalEffectiveHintStyle = mode === 'followup' ? lastHintStyle : hintStyle;
+    await saveHistoryMetadata(problemSlug, storageMode, {
+        lastMode: finalEffectiveMode,
+        lastHintStyle: finalEffectiveHintStyle
     });
 
     return {
@@ -171,11 +185,11 @@ async function handleAiRequest(payload) {
 }
 
 /**
- * Get history metadata for a problem
+ * Get history metadata for a problem and mode
  */
-async function getHistoryMetadata(problemSlug) {
+async function getHistoryMetadata(problemSlug, mode = 'overview') {
     try {
-        const key = `historyMeta_${problemSlug}`;
+        const key = `historyMeta_${problemSlug}_${mode}`;
         const result = await chrome.storage.local.get(key);
         return result[key] || null;
     } catch (error) {
@@ -185,14 +199,45 @@ async function getHistoryMetadata(problemSlug) {
 }
 
 /**
- * Save history metadata for a problem
+ * Save history metadata for a problem and mode
  */
-async function saveHistoryMetadata(problemSlug, metadata) {
+async function saveHistoryMetadata(problemSlug, mode, metadata) {
     try {
-        const key = `historyMeta_${problemSlug}`;
+        const key = `historyMeta_${problemSlug}_${mode}`;
         await chrome.storage.local.set({ [key]: metadata });
     } catch (error) {
         console.error('[Background] Failed to save history metadata:', error);
+    }
+}
+
+/**
+ * Handle importing history from one mode to another
+ */
+async function handleImportHistory(payload) {
+    const { problemSlug, fromMode, toMode } = payload;
+
+    try {
+        // Get history from source mode
+        const sourceHistory = await getConversationHistory(problemSlug, fromMode);
+        if (!sourceHistory || sourceHistory.length === 0) {
+            return { success: false, error: 'No history to import' };
+        }
+
+        // Get current history in target mode
+        const targetHistory = await getConversationHistory(problemSlug, toMode);
+
+        // Append source history to target (with separator)
+        const separator = { role: 'system', content: `--- Imported from ${fromMode} mode ---` };
+        const newHistory = [...targetHistory, separator, ...sourceHistory];
+
+        // Keep manageable size
+        const trimmedHistory = newHistory.slice(-40);
+        await saveConversationHistory(problemSlug, toMode, trimmedHistory);
+
+        return { success: true, importedCount: sourceHistory.length };
+    } catch (error) {
+        console.error('[Background] Failed to import history:', error);
+        return { success: false, error: error.message };
     }
 }
 

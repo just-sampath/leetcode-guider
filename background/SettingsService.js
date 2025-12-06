@@ -89,25 +89,50 @@ async function updateSetting(key, value) {
 }
 
 /**
- * Get conversation history for a problem
+ * Get conversation history for a problem and mode
  * @param {string} problemSlug
+ * @param {string} mode - 'overview' | 'hints' | 'debug' | 'review'
  * @returns {Promise<Array>}
  */
-async function getConversationHistory(problemSlug) {
+async function getConversationHistory(problemSlug, mode = 'overview') {
     const settings = await loadSettings();
-    return settings.conversationHistory[problemSlug] || [];
+    const key = `${problemSlug}_${mode}`;
+    return settings.conversationHistory[key] || [];
 }
 
 /**
- * Save conversation history for a problem
+ * Save conversation history for a problem and mode
  * @param {string} problemSlug
+ * @param {string} mode - 'overview' | 'hints' | 'debug' | 'review'
  * @param {Array} history
  * @returns {Promise<void>}
  */
-async function saveConversationHistory(problemSlug, history) {
+async function saveConversationHistory(problemSlug, mode, history) {
     const settings = await loadSettings();
-    settings.conversationHistory[problemSlug] = history;
+    const key = `${problemSlug}_${mode}`;
+    settings.conversationHistory[key] = history;
     await saveSettings(settings);
+}
+
+/**
+ * Get list of modes that have conversation history for a problem
+ * @param {string} problemSlug
+ * @returns {Promise<Array<{mode: string, messageCount: number}>>}
+ */
+async function getModeHistories(problemSlug) {
+    const settings = await loadSettings();
+    const modes = ['overview', 'hints', 'debug', 'review'];
+    const result = [];
+
+    for (const mode of modes) {
+        const key = `${problemSlug}_${mode}`;
+        const history = settings.conversationHistory[key];
+        if (history && history.length > 0) {
+            result.push({ mode, messageCount: history.length });
+        }
+    }
+
+    return result;
 }
 
 
@@ -118,5 +143,6 @@ export {
     updateSetting,
     getConversationHistory,
     saveConversationHistory,
+    getModeHistories,
     DEFAULT_SETTINGS
 };
