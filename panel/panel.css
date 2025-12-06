@@ -177,20 +177,19 @@
 
 .lc-ai-coach-tab.active {
   color: var(--lc-accent);
-  border-bottom-color: var(--lc-accent);
+  border-bottom-color: transparent;
 }
 
-.lc-ai-coach-tab.active::before {
+.lc-ai-coach-tab.active::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 30px;
+  width: 100%;
   height: 2px;
   background: var(--lc-accent);
-  border-radius: 2px;
-  box-shadow: 0 0 10px var(--lc-accent);
+  border-radius: 2px 2px 0 0;
 }
 
 /* ============================================
@@ -742,6 +741,34 @@
 }
 
 .lc-settings-group input::placeholder {
+  color: var(--lc-text-disabled);
+}
+
+.lc-settings-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--lc-bg-elevated);
+  border: 1px solid var(--lc-border-strong);
+  border-radius: var(--lc-radius-sm);
+  color: var(--lc-text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  transition: all var(--lc-transition-fast);
+}
+
+.lc-settings-group textarea:hover {
+  border-color: var(--lc-accent);
+}
+
+.lc-settings-group textarea:focus {
+  outline: none;
+  border-color: var(--lc-accent);
+  box-shadow: 0 0 0 2px var(--lc-accent-subtle);
+}
+
+.lc-settings-group textarea::placeholder {
   color: var(--lc-text-disabled);
 }
 

@@ -114,6 +114,10 @@ const UiPanel = (function () {
                 <input type="text" id="lc-settings-baseurl" placeholder="https://api.example.com/v1">
               </div>
               <div class="lc-settings-group">
+                <label>Custom Persona (optional)</label>
+                <textarea id="lc-settings-persona" rows="3" placeholder="Custom instructions for the AI..."></textarea>
+              </div>
+              <div class="lc-settings-group">
                 <label>Panel Mode</label>
                 <select id="lc-settings-panelmode">
                   <option value="popup">Floating Popup</option>
@@ -901,6 +905,7 @@ const UiPanel = (function () {
     const apiKey = document.getElementById('lc-settings-apikey')?.value || '';
     const model = document.getElementById('lc-settings-model')?.value || '';
     const baseUrl = document.getElementById('lc-settings-baseurl')?.value || '';
+    const persona = document.getElementById('lc-settings-persona')?.value || '';
     const newPanelMode = document.getElementById('lc-settings-panelmode')?.value || 'popup';
 
     try {
@@ -911,6 +916,7 @@ const UiPanel = (function () {
       const newSettings = {
         ...current,
         provider: provider,
+        persona: persona,
         panelMode: newPanelMode,
         apiKeys: { ...(current.apiKeys || {}), [provider]: apiKey },
         models: { ...(current.models || {}), [provider]: model },
@@ -990,6 +996,12 @@ const UiPanel = (function () {
       const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
       if (baseUrlGroup) {
         baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
+      }
+
+      // Load persona
+      const personaEl = document.getElementById('lc-settings-persona');
+      if (personaEl && response.persona) {
+        personaEl.value = response.persona;
       }
 
       // Update panel mode selector
