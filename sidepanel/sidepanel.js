@@ -12,6 +12,14 @@ let currentTab = 'overview';
 let isLoading = false;
 let problemContext = null;
 
+// Default models per provider
+const DEFAULT_MODELS = {
+    openai: ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
+    anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
+    google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
+    custom: []
+};
+
 /**
  * Initialize the side panel
  */
@@ -46,11 +54,22 @@ function setupEventListeners() {
         btn.addEventListener('click', () => handleAction(btn.dataset.action));
     });
 
-    // Settings form
+    // Settings form - provider change updates all fields
     document.getElementById('settings-provider')?.addEventListener('change', (e) => {
-        const baseUrlGroup = document.getElementById('baseurl-group');
-        if (baseUrlGroup) {
-            baseUrlGroup.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        const newProvider = e.target.value;
+        updateSettingsFieldsForProvider(newProvider);
+    });
+
+    // Model select and custom model listeners
+    document.getElementById('settings-model-select')?.addEventListener('change', (e) => {
+        if (e.target.value) {
+            document.getElementById('settings-model-custom').value = '';
+        }
+    });
+
+    document.getElementById('settings-model-custom')?.addEventListener('input', (e) => {
+        if (e.target.value) {
+            document.getElementById('settings-model-select').value = '';
         }
     });
 
@@ -339,6 +358,52 @@ function formatMarkdown(text) {
 }
 
 /**
+ * Update settings fields for a specific provider
+ */
+function updateSettingsFieldsForProvider(provider) {
+    // Update API key
+    const apiKeyEl = document.getElementById('settings-apikey');
+    if (apiKeyEl && currentSettings?.apiKeys) {
+        apiKeyEl.value = currentSettings.apiKeys[provider] || '';
+    }
+
+    // Update model dropdown
+    const modelSelectEl = document.getElementById('settings-model-select');
+    const modelCustomEl = document.getElementById('settings-model-custom');
+    if (modelSelectEl) {
+        modelSelectEl.innerHTML = '<option value="">-- Select --</option>';
+        const models = DEFAULT_MODELS[provider] || [];
+        models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            modelSelectEl.appendChild(opt);
+        });
+
+        const currentModel = currentSettings?.models?.[provider] || '';
+        if (models.includes(currentModel)) {
+            modelSelectEl.value = currentModel;
+            if (modelCustomEl) modelCustomEl.value = '';
+        } else {
+            modelSelectEl.value = '';
+            if (modelCustomEl) modelCustomEl.value = currentModel;
+        }
+    }
+
+    // Update base URL
+    const baseUrlEl = document.getElementById('settings-baseurl');
+    if (baseUrlEl && currentSettings?.baseUrls) {
+        baseUrlEl.value = currentSettings.baseUrls[provider] || '';
+    }
+
+    // Toggle base URL visibility
+    const baseUrlGroup = document.getElementById('baseurl-group');
+    if (baseUrlGroup) {
+        baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+}
+
+/**
  * Load settings
  */
 async function loadSettings() {
@@ -355,22 +420,10 @@ async function loadSettings() {
         const provider = response.provider || 'openai';
         document.getElementById('settings-provider').value = provider;
 
-        if (response.apiKeys) {
-            document.getElementById('settings-apikey').value = response.apiKeys[provider] || '';
-        }
-
-        if (response.models) {
-            document.getElementById('settings-model').value = response.models[provider] || '';
-        }
-
-        if (response.baseUrls) {
-            document.getElementById('settings-baseurl').value = response.baseUrls[provider] || '';
-        }
+        // Update all fields for this provider
+        updateSettingsFieldsForProvider(provider);
 
         document.getElementById('settings-panelmode').value = response.panelMode || 'popup';
-
-        document.getElementById('baseurl-group').style.display =
-            provider === 'custom' ? 'block' : 'none';
     } catch (error) {
         console.error('[SidePanel] Failed to load settings:', error);
     }
@@ -384,7 +437,10 @@ async function saveSettings() {
 
     const provider = document.getElementById('settings-provider')?.value || 'openai';
     const apiKey = document.getElementById('settings-apikey')?.value || '';
-    const model = document.getElementById('settings-model')?.value || '';
+    // Get model from dropdown or custom input
+    const modelSelect = document.getElementById('settings-model-select')?.value || '';
+    const modelCustom = document.getElementById('settings-model-custom')?.value || '';
+    const model = modelCustom || modelSelect;
     const baseUrl = document.getElementById('settings-baseurl')?.value || '';
     const panelMode = document.getElementById('settings-panelmode')?.value || 'popup';
 

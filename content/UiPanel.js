@@ -16,6 +16,14 @@ const UiPanel = (function () {
   let panelMode = 'popup'; // 'popup' | 'sidebar' | 'sidepanel'
   let sidebarWidth = 380;
 
+  // Default models per provider
+const DEFAULT_MODELS = {
+    openai: ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
+    anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
+    google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
+    custom: []
+};
+
   /**
    * Create the panel HTML structure
    * Panel starts hidden, toggle button starts visible
@@ -107,7 +115,10 @@ const UiPanel = (function () {
               </div>
               <div class="lc-settings-group">
                 <label>Model</label>
-                <input type="text" id="lc-settings-model" placeholder="gpt-4o">
+                <select id="lc-settings-model-select">
+                  <option value="">-- Select --</option>
+                </select>
+                <input type="text" id="lc-settings-model-custom" placeholder="Or enter custom model">
               </div>
               <div class="lc-settings-group" id="lc-settings-baseurl-group" style="display:none;">
                 <label>Base URL</label>
@@ -456,11 +467,22 @@ const UiPanel = (function () {
       updateReasoningEffort(e.target.value);
     });
 
-    // Settings form events
+    // Settings form events - provider change updates all fields
     document.getElementById('lc-settings-provider')?.addEventListener('change', (e) => {
-      const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
-      if (baseUrlGroup) {
-        baseUrlGroup.style.display = e.target.value === 'custom' ? 'block' : 'none';
+      const newProvider = e.target.value;
+      updateSettingsFieldsForProvider(newProvider);
+    });
+
+    // Model select and custom model listeners
+    document.getElementById('lc-settings-model-select')?.addEventListener('change', (e) => {
+      if (e.target.value) {
+        document.getElementById('lc-settings-model-custom').value = '';
+      }
+    });
+
+    document.getElementById('lc-settings-model-custom')?.addEventListener('input', (e) => {
+      if (e.target.value) {
+        document.getElementById('lc-settings-model-select').value = '';
       }
     });
 
@@ -903,7 +925,10 @@ const UiPanel = (function () {
 
     const provider = document.getElementById('lc-settings-provider')?.value || 'openai';
     const apiKey = document.getElementById('lc-settings-apikey')?.value || '';
-    const model = document.getElementById('lc-settings-model')?.value || '';
+    // Get model from dropdown or custom input
+    const modelSelect = document.getElementById('lc-settings-model-select')?.value || '';
+    const modelCustom = document.getElementById('lc-settings-model-custom')?.value || '';
+    const model = modelCustom || modelSelect;
     const baseUrl = document.getElementById('lc-settings-baseurl')?.value || '';
     const persona = document.getElementById('lc-settings-persona')?.value || '';
     const newPanelMode = document.getElementById('lc-settings-panelmode')?.value || 'popup';
@@ -959,6 +984,53 @@ const UiPanel = (function () {
   }
 
   /**
+   * Update settings fields for a specific provider
+   * Called when provider changes or on initial load
+   */
+  function updateSettingsFieldsForProvider(provider) {
+    // Update API key
+    const apiKeyEl = document.getElementById('lc-settings-apikey');
+    if (apiKeyEl && currentSettings?.apiKeys) {
+      apiKeyEl.value = currentSettings.apiKeys[provider] || '';
+    }
+
+    // Update model dropdown
+    const modelSelectEl = document.getElementById('lc-settings-model-select');
+    const modelCustomEl = document.getElementById('lc-settings-model-custom');
+    if (modelSelectEl) {
+      modelSelectEl.innerHTML = '<option value="">-- Select --</option>';
+      const models = DEFAULT_MODELS[provider] || [];
+      models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        modelSelectEl.appendChild(opt);
+      });
+
+      const currentModel = currentSettings?.models?.[provider] || '';
+      if (models.includes(currentModel)) {
+        modelSelectEl.value = currentModel;
+        if (modelCustomEl) modelCustomEl.value = '';
+      } else {
+        modelSelectEl.value = '';
+        if (modelCustomEl) modelCustomEl.value = currentModel;
+      }
+    }
+
+    // Update base URL
+    const baseUrlEl = document.getElementById('lc-settings-baseurl');
+    if (baseUrlEl && currentSettings?.baseUrls) {
+      baseUrlEl.value = currentSettings.baseUrls[provider] || '';
+    }
+
+    // Toggle base URL visibility
+    const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
+    if (baseUrlGroup) {
+      baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
+    }
+  }
+
+  /**
    * Load settings UI only (without fetching mode again)
    * Called after panel injection
    */
@@ -973,30 +1045,13 @@ const UiPanel = (function () {
         reasoningEl.value = response.reasoningEffort;
       }
 
-      // Populate inline settings form
+      // Set provider
       const provider = response.provider || 'openai';
       const providerEl = document.getElementById('lc-settings-provider');
       if (providerEl) providerEl.value = provider;
 
-      const apiKeyEl = document.getElementById('lc-settings-apikey');
-      if (apiKeyEl && response.apiKeys) {
-        apiKeyEl.value = response.apiKeys[provider] || '';
-      }
-
-      const modelEl = document.getElementById('lc-settings-model');
-      if (modelEl && response.models) {
-        modelEl.value = response.models[provider] || '';
-      }
-
-      const baseUrlEl = document.getElementById('lc-settings-baseurl');
-      if (baseUrlEl && response.baseUrls) {
-        baseUrlEl.value = response.baseUrls[provider] || '';
-      }
-
-      const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
-      if (baseUrlGroup) {
-        baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
-      }
+      // Update all fields for this provider
+      updateSettingsFieldsForProvider(provider);
 
       // Load persona
       const personaEl = document.getElementById('lc-settings-persona');

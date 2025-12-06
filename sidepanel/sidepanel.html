@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeetCode AI Coach</title>
     <link rel="stylesheet" href="sidepanel.css">
 </head>
+
 <body>
     <div class="sidepanel-container">
         <div class="sidepanel-header">
@@ -94,7 +96,10 @@
                     </div>
                     <div class="settings-group">
                         <label>Model</label>
-                        <input type="text" id="settings-model" placeholder="gpt-4o">
+                        <select id="settings-model-select">
+                            <option value="">-- Select --</option>
+                        </select>
+                        <input type="text" id="settings-model-custom" placeholder="Or enter custom model">
                     </div>
                     <div class="settings-group" id="baseurl-group" style="display:none;">
                         <label>Base URL</label>
@@ -153,4 +158,5 @@
 
     <script src="sidepanel.js"></script>
 </body>
+
 </html>
