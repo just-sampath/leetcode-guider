@@ -415,25 +415,6 @@ const UiPanel = (function () {
   }
 
   /**
-   * Set up message handler for Chrome Side Panel communication
-   */
-  function setupSidePanelMessageHandler() {
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.type === 'GET_PROBLEM_CONTEXT') {
-        const context = window.LeetCodeDomAdapter.getContext();
-        sendResponse({ context });
-        return true;
-      }
-      if (request.type === 'GET_CODE') {
-        const code = window.CodeBridge?.getCode?.() || '';
-        const language = window.LeetCodeDomAdapter?.getLanguage?.() || 'unknown';
-        sendResponse({ code, language });
-        return true;
-      }
-    });
-  }
-
-  /**
    * Set up event listeners
    */
   function setupEventListeners() {

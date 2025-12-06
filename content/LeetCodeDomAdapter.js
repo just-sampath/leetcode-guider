@@ -283,13 +283,6 @@ const LeetCodeDomAdapter = (function () {
             result.status = statusEl.textContent.trim();
         }
 
-        // Try to find input/output details
-        const outputSelectors = [
-            'div[class*="output"]',
-            '[data-e2e-locator="test-case"]',
-            'div[class*="testcase"]'
-        ];
-
         // Look for labeled sections
         const allText = document.body.innerText;
 
