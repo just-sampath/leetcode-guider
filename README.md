@@ -2,8 +2,6 @@
 
 A powerful Chrome Extension that integrates with LeetCode to provide an intelligent, personalized AI coding coach. It helps you solve problems by providing hints, explanations, and debugging assistance without giving away the full solution.
 
-![LeetCode AI Coach Icon](icons/icon128.png)
-
 ## ✨ Features
 
 - **BYOK (Bring Your Own Key)**: Support for multiple AI providers:
