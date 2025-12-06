@@ -18,9 +18,7 @@ class OpenAiProvider extends AiProvider {
     }
 
     getDefaultModels() {
-        // Current models as of Dec 2024
-        // User can enter custom model names for newer models like gpt-5.1 when available
-        return ['gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini'];
+        return ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'];
     }
 
     /**

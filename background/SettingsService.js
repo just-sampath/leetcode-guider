@@ -110,34 +110,7 @@ async function saveConversationHistory(problemSlug, history) {
     await saveSettings(settings);
 }
 
-/**
- * Clear conversation history for a problem
- * @param {string} problemSlug
- * @returns {Promise<void>}
- */
-async function clearConversationHistory(problemSlug) {
-    const settings = await loadSettings();
-    delete settings.conversationHistory[problemSlug];
-    await saveSettings(settings);
-}
 
-/**
- * Get the current API key for the active provider
- * @returns {Promise<string>}
- */
-async function getCurrentApiKey() {
-    const settings = await loadSettings();
-    return settings.apiKeys[settings.provider] || '';
-}
-
-/**
- * Get the current model for the active provider
- * @returns {Promise<string>}
- */
-async function getCurrentModel() {
-    const settings = await loadSettings();
-    return settings.models[settings.provider] || '';
-}
 
 export {
     loadSettings,
@@ -145,8 +118,5 @@ export {
     updateSetting,
     getConversationHistory,
     saveConversationHistory,
-    clearConversationHistory,
-    getCurrentApiKey,
-    getCurrentModel,
     DEFAULT_SETTINGS
 };

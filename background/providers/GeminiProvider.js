@@ -21,10 +21,10 @@ class GeminiProvider extends AiProvider {
     }
 
     getDefaultModels() {
-        // Current Gemini models as of Dec 2024
         return [
+            'gemini-2.5-flash',
             'gemini-2.5-pro',
-            'gemini-2.5-flash'
+            'gemini-3-pro-preview'
         ];
     }
 

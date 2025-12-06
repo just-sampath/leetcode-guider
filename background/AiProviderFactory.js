@@ -54,28 +54,4 @@ function createProvider(settings) {
     }
 }
 
-/**
- * Get default models for a provider
- * @param {string} providerName
- * @returns {string[]}
- */
-function getDefaultModels(providerName) {
-    const modelMap = {
-        [PROVIDERS.OPENAI]: ['gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o1-mini'],
-        [PROVIDERS.ANTHROPIC]: ['claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101'],
-        [PROVIDERS.GOOGLE]: ['gemini-2.5-pro', 'gemini-2.5-flash'],
-        [PROVIDERS.CUSTOM]: []
-    };
-
-    return modelMap[providerName] || [];
-}
-
-/**
- * Get all available providers
- * @returns {Object}
- */
-function getProviders() {
-    return PROVIDERS;
-}
-
-export { createProvider, getDefaultModels, getProviders, PROVIDERS };
+export { createProvider };

@@ -17,12 +17,12 @@ const UiPanel = (function () {
   let sidebarWidth = 380;
 
   // Default models per provider
-const DEFAULT_MODELS = {
+  const DEFAULT_MODELS = {
     openai: ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
     anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
     google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
     custom: []
-};
+  };
 
   /**
    * Create the panel HTML structure
@@ -760,24 +760,7 @@ const DEFAULT_MODELS = {
     window.EventBus.emit(window.EVENTS.PANEL_TOGGLE, isVisible);
   }
 
-  /**
-   * Open settings page
-   */
-  /**
-   * Open settings page
-   */
-  function openSettings() {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage().catch(err => {
-        console.error('[UiPanel] Failed to open options page via API:', err);
-        // Fallback: Open via URL
-        window.open(chrome.runtime.getURL('options/options.html'), '_blank');
-      });
-    } else {
-      // Fallback for contexts where openOptionsPage might not be directly available
-      window.open(chrome.runtime.getURL('options/options.html'), '_blank');
-    }
-  }
+
 
   /**
    * Copy response to clipboard
@@ -820,51 +803,7 @@ const DEFAULT_MODELS = {
     }
   }
 
-  /**
-   * Load settings and update UI
-   */
-  async function loadSettings() {
-    try {
-      const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS' });
-      currentSettings = response;
 
-      // Update reasoning effort selector
-      const reasoningEl = document.getElementById('lc-reasoning-effort');
-      if (reasoningEl && response.reasoningEffort) {
-        reasoningEl.value = response.reasoningEffort;
-      }
-
-      // Populate inline settings form
-      const provider = response.provider || 'openai';
-      const providerEl = document.getElementById('lc-settings-provider');
-      if (providerEl) providerEl.value = provider;
-
-      const apiKeyEl = document.getElementById('lc-settings-apikey');
-      if (apiKeyEl && response.apiKeys) {
-        apiKeyEl.value = response.apiKeys[provider] || '';
-      }
-
-      const modelEl = document.getElementById('lc-settings-model');
-      if (modelEl && response.models) {
-        modelEl.value = response.models[provider] || '';
-      }
-
-      const baseUrlEl = document.getElementById('lc-settings-baseurl');
-      if (baseUrlEl && response.baseUrls) {
-        baseUrlEl.value = response.baseUrls[provider] || '';
-      }
-
-      const baseUrlGroup = document.getElementById('lc-settings-baseurl-group');
-      if (baseUrlGroup) {
-        baseUrlGroup.style.display = provider === 'custom' ? 'block' : 'none';
-      }
-
-      // Load chat history for this problem
-      await loadChatHistory();
-    } catch (error) {
-      console.error('[UiPanel] Failed to load settings:', error);
-    }
-  }
 
   /**
    * Load and display chat history for current problem

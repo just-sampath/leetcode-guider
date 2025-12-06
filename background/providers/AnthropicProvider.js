@@ -22,11 +22,10 @@ class AnthropicProvider extends AiProvider {
     }
 
     getDefaultModels() {
-        // Current Claude 4 models as of Dec 2024
-        // Using exact model IDs from Anthropic docs
         return [
-            'claude-sonnet-4-5-20250929',  // Claude Sonnet 4.5
-            'claude-opus-4-5-20251101'     // Claude Opus 4.5
+            'claude-haiku-4-5',
+            'claude-sonnet-4-5',
+            'claude-opus-4-5'
         ];
     }
 
