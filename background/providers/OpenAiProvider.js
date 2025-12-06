@@ -18,7 +18,7 @@ class OpenAiProvider extends AiProvider {
     }
 
     getDefaultModels() {
-        return ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'];
+        return ['gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex-max'];
     }
 
     /**

@@ -8,7 +8,7 @@ const STORAGE_KEY = 'leetcodeAiCoach';
 
 // Default models per provider
 const DEFAULT_MODELS = {
-    openai: ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
+    openai: ['gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
     anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
     google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
     custom: []

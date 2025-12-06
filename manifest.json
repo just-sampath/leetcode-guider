@@ -26,6 +26,7 @@
                 "content/EventBus.js",
                 "content/LeetCodeDomAdapter.js",
                 "content/CodeBridge.js",
+                "content/ChatRenderer.js",
                 "content/UiPanel.js",
                 "content/contentScript.js"
             ],

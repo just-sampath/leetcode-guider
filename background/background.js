@@ -80,7 +80,7 @@ async function handleMessage(request, sender) {
  * @returns {Promise<Object>}
  */
 async function handleAiRequest(payload) {
-    const { mode, hintStyle, problemContext } = payload;
+    const { mode, hintStyle, problemContext, followUpQuestion } = payload;
 
     // Load settings
     const settings = await loadSettings();
@@ -95,20 +95,35 @@ async function handleAiRequest(payload) {
     const problemSlug = problemContext.urlSlug || 'unknown';
     const history = await getConversationHistory(problemSlug);
 
-    // Build prompt
+    // Determine lastMode and lastHintStyle from history metadata
+    // We store these in the first user message of each exchange
+    let lastMode = null;
+    let lastHintStyle = null;
+
+    // Look for the last mode from history (we store metadata in the history)
+    const historyMeta = await getHistoryMetadata(problemSlug);
+    if (historyMeta) {
+        lastMode = historyMeta.lastMode;
+        lastHintStyle = historyMeta.lastHintStyle;
+    }
+
+    // Build prompt with mode inheritance for follow-ups
     const messages = buildPrompt({
         mode,
         hintStyle,
+        lastMode,
+        lastHintStyle,
         problemContext,
         userPersona: settings.persona,
-        conversationHistory: history
+        conversationHistory: history,
+        followUpQuestion
     });
 
     // Create provider and call AI
     const provider = createProvider(settings);
     const model = settings.models[settings.provider];
 
-    console.log(`[Background] Calling ${settings.provider} with model ${model}, effort: ${settings.reasoningEffort}`);
+    console.log(`[Background] Calling ${settings.provider} with model ${model}, mode: ${mode}, lastMode: ${lastMode}`);
 
     const response = await provider.callModel({
         model,
@@ -116,17 +131,36 @@ async function handleAiRequest(payload) {
         messages
     });
 
-    // Save to conversation history
-    // Add the user's query (simplified) and assistant response
+    // Save to conversation history with readable labels
+    const modeLabels = {
+        overview: '💡 Explain this problem',
+        hints: '🔍 Get Hint',
+        debug: '🐛 Debug my code',
+        review: '📝 Review my solution',
+        followup: null
+    };
+
+    const userMessage = followUpQuestion
+        ? followUpQuestion
+        : (modeLabels[mode] || `Request: ${mode}`);
+
     const newHistory = [
         ...history,
-        { role: 'user', content: `[${mode}${hintStyle ? ':' + hintStyle : ''}] Request for help` },
+        { role: 'user', content: userMessage },
         { role: 'assistant', content: response.text }
     ];
 
     // Keep history manageable (last 20 exchanges)
     const trimmedHistory = newHistory.slice(-40);
     await saveConversationHistory(problemSlug, trimmedHistory);
+
+    // Save metadata about the current mode (for follow-ups to inherit)
+    const effectiveMode = mode === 'followup' ? (lastMode || 'overview') : mode;
+    const effectiveHintStyle = mode === 'followup' ? lastHintStyle : hintStyle;
+    await saveHistoryMetadata(problemSlug, {
+        lastMode: effectiveMode,
+        lastHintStyle: effectiveHintStyle
+    });
 
     return {
         text: response.text,
@@ -136,6 +170,31 @@ async function handleAiRequest(payload) {
     };
 }
 
+/**
+ * Get history metadata for a problem
+ */
+async function getHistoryMetadata(problemSlug) {
+    try {
+        const key = `historyMeta_${problemSlug}`;
+        const result = await chrome.storage.local.get(key);
+        return result[key] || null;
+    } catch (error) {
+        console.error('[Background] Failed to get history metadata:', error);
+        return null;
+    }
+}
+
+/**
+ * Save history metadata for a problem
+ */
+async function saveHistoryMetadata(problemSlug, metadata) {
+    try {
+        const key = `historyMeta_${problemSlug}`;
+        await chrome.storage.local.set({ [key]: metadata });
+    } catch (error) {
+        console.error('[Background] Failed to save history metadata:', error);
+    }
+}
+
 // Log when service worker starts
 console.log('[LeetCode AI Coach] Background service worker started');
-

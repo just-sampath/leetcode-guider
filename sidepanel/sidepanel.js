@@ -14,7 +14,7 @@ let problemContext = null;
 
 // Default models per provider
 const DEFAULT_MODELS = {
-    openai: ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
+    openai: ['gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
     anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
     google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
     custom: []
@@ -257,6 +257,65 @@ async function handleAction(action) {
 }
 
 /**
+ * Handle follow-up message from chat input
+ * @param {string} message - The user's follow-up question
+ */
+async function handleFollowUpMessage(message) {
+    if (isLoading || !message || !problemContext) return;
+
+    const contentEl = document.getElementById('response-content');
+    if (!contentEl) return;
+
+    // Inject styles if needed
+    ChatRenderer.injectStyles(document);
+
+    // Add user message to chat thread
+    ChatRenderer.appendMessage(contentEl, {
+        role: 'user',
+        content: message
+    });
+
+    // Show loading
+    showLoading();
+
+    try {
+        // Get fresh code from content script
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+            try {
+                const codeResponse = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CODE' });
+                if (codeResponse && codeResponse.code) {
+                    problemContext.currentCode = codeResponse.code;
+                    problemContext.language = codeResponse.language;
+                }
+            } catch (e) {
+                console.warn('[SidePanel] Could not get code:', e);
+            }
+        }
+
+        problemContext.followUpQuestion = message;
+
+        // Send request to background with 'followup' mode
+        const response = await chrome.runtime.sendMessage({
+            type: 'GET_AI_RESPONSE',
+            payload: {
+                mode: 'followup',
+                followUpQuestion: message,
+                problemContext
+            }
+        });
+
+        if (response.error) {
+            throw new Error(response.error);
+        }
+
+        displayResponse(response);
+    } catch (error) {
+        displayError(error.message);
+    }
+}
+
+/**
  * Show loading state
  */
 function showLoading() {
@@ -275,7 +334,7 @@ function hideLoading() {
 }
 
 /**
- * Display AI response
+ * Display AI response - appends to chat thread
  */
 function displayResponse(response) {
     hideLoading();
@@ -284,19 +343,20 @@ function displayResponse(response) {
     const contentEl = document.getElementById('response-content');
     if (!contentEl) return;
 
-    let html = formatMarkdown(response.text || 'No response received.');
-
+    // Build content with optional thinking section
+    let messageContent = response.text || 'No response received.';
     if (response.thinking) {
-        html = `
-            <details class="thinking-section">
-                <summary>💭 Model Thinking</summary>
-                <div class="thinking-content">${formatMarkdown(response.thinking)}</div>
-            </details>
-            ${html}
-        `;
+        messageContent = `💭 **Model Thinking:**\n${response.thinking}\n\n---\n\n${messageContent}`;
     }
 
-    contentEl.innerHTML = html;
+    // Inject styles if not present
+    ChatRenderer.injectStyles(document);
+
+    // Use ChatRenderer to append the new message
+    ChatRenderer.appendMessage(contentEl, {
+        role: 'assistant',
+        content: messageContent
+    });
 }
 
 /**
@@ -321,41 +381,7 @@ function hideError() {
     }
 }
 
-/**
- * Simple markdown formatting
- */
-function formatMarkdown(text) {
-    if (!text) return '';
-
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-    // Code blocks
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-        return `<pre class="code-block"><code class="language-${lang}">${code.trim()}</code></pre>`;
-    });
-
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-
-    // Bold
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-    // Italic
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-    // Headers
-    html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-    html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-
-    // Line breaks
-    html = html.replace(/\n/g, '<br>');
-
-    return html;
-}
+// formatMarkdown is now provided by ChatRenderer - using shared implementation
 
 /**
  * Update settings fields for a specific provider
@@ -476,6 +502,7 @@ async function saveSettings() {
 
 /**
  * Load chat history
+ * Uses ChatRenderer for consistent rendering with collapsible messages
  */
 async function loadChatHistory() {
     if (!problemContext || !problemContext.urlSlug) return;
@@ -492,16 +519,20 @@ async function loadChatHistory() {
         const contentEl = document.getElementById('response-content');
         if (!contentEl) return;
 
-        const lastAssistantMsg = [...history].reverse().find(msg => msg.role === 'assistant');
+        // Inject ChatRenderer styles if not already present
+        ChatRenderer.injectStyles(document);
 
-        if (lastAssistantMsg) {
-            const exchangeCount = Math.floor(history.length / 2);
-            let html = `<div class="history-indicator">
-                <span>📜 ${exchangeCount} previous exchange${exchangeCount !== 1 ? 's' : ''}</span>
-            </div>`;
-            html += `<div class="last-response">${formatMarkdown(lastAssistantMsg.content)}</div>`;
-            contentEl.innerHTML = html;
-        }
+        // Use ChatRenderer to render the full chat thread with collapsible messages
+        const chatHtml = ChatRenderer.renderChatThread(history, {
+            collapseOld: true
+        });
+
+        contentEl.innerHTML = chatHtml;
+
+        // Set up event listeners including follow-up handler
+        ChatRenderer.setupEventListeners(contentEl, handleFollowUpMessage);
+
+        console.log(`[SidePanel] Loaded ${history.length} history messages`);
     } catch (error) {
         console.error('[SidePanel] Failed to load history:', error);
     }
@@ -536,8 +567,12 @@ async function clearHistory() {
             payload: { problemSlug: problemContext.urlSlug }
         });
 
-        document.getElementById('response-content').innerHTML =
-            '<p class="placeholder">Conversation history cleared.</p>';
+        const contentEl = document.getElementById('response-content');
+        if (contentEl) {
+            ChatRenderer.injectStyles(document);
+            contentEl.innerHTML = ChatRenderer.renderChatThread([], { showInput: true });
+            ChatRenderer.setupEventListeners(contentEl, handleFollowUpMessage);
+        }
     } catch (error) {
         console.error('[SidePanel] Failed to clear history:', error);
     }

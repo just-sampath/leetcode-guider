@@ -18,7 +18,7 @@ const UiPanel = (function () {
 
   // Default models per provider
   const DEFAULT_MODELS = {
-    openai: ['gpt-5.1-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
+    openai: ['gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex-max'],
     anthropic: ['claude-haiku-4-5', 'claude-sonnet-4-5', 'claude-opus-4-5'],
     google: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-pro-preview'],
     custom: []
@@ -553,6 +553,59 @@ const UiPanel = (function () {
   }
 
   /**
+   * Handle follow-up message from chat input
+   * @param {string} message - The user's follow-up question
+   */
+  async function handleFollowUpMessage(message) {
+    if (isLoading || !message) return;
+
+    const contentEl = document.querySelector('.lc-ai-coach-response-content');
+    if (!contentEl) return;
+
+    // Inject ChatRenderer styles if needed
+    window.ChatRenderer.injectStyles(document);
+
+    // Add user message to chat thread
+    window.ChatRenderer.appendMessage(contentEl, {
+      role: 'user',
+      content: message
+    });
+
+    // Show loading
+    showLoading();
+
+    try {
+      // Get fresh code before the request
+      if (window.CodeBridge) {
+        await window.CodeBridge.requestCode();
+      }
+
+      // Get current context
+      const context = window.LeetCodeDomAdapter.refresh();
+      context.followUpQuestion = message;
+
+      // Send request to background with 'followup' mode
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_AI_RESPONSE',
+        payload: {
+          mode: 'followup',
+          followUpQuestion: message,
+          problemContext: context
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      // Display the AI response
+      displayResponse(response);
+    } catch (error) {
+      displayError(error.message);
+    }
+  }
+
+  /**
    * Show loading state
    */
   function showLoading() {
@@ -581,7 +634,7 @@ const UiPanel = (function () {
   }
 
   /**
-   * Display AI response
+   * Display AI response - appends to chat thread
    */
   function displayResponse(response) {
     hideLoading();
@@ -590,21 +643,17 @@ const UiPanel = (function () {
     const contentEl = document.querySelector('.lc-ai-coach-response-content');
     if (!contentEl) return;
 
-    // Format response with markdown-like rendering
-    let html = formatMarkdown(response.text || 'No response received.');
-
-    // Add thinking section if present
+    // Build content with optional thinking section
+    let messageContent = response.text || 'No response received.';
     if (response.thinking) {
-      html = `
-        <details class="lc-ai-coach-thinking">
-          <summary>💭 Model Thinking</summary>
-          <div class="lc-ai-coach-thinking-content">${formatMarkdown(response.thinking)}</div>
-        </details>
-        ${html}
-      `;
+      messageContent = `💭 **Model Thinking:**\n${response.thinking}\n\n---\n\n${messageContent}`;
     }
 
-    contentEl.innerHTML = html;
+    // Use ChatRenderer to append the new message
+    window.ChatRenderer.appendMessage(contentEl, {
+      role: 'assistant',
+      content: messageContent
+    });
   }
 
   /**
@@ -630,68 +679,7 @@ const UiPanel = (function () {
     }
   }
 
-  /**
-   * Enhanced markdown-like formatting
-   */
-  function formatMarkdown(text) {
-    if (!text) return '';
-
-    // Escape HTML
-    let html = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // Code blocks (must be done first to preserve content)
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `<pre class="lc-ai-coach-code"><code class="language-${lang}">${code.trim()}</code></pre>`;
-    });
-
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code class="lc-ai-coach-inline-code">$1</code>');
-
-    // Bold
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-    // Italic
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-    // Headers
-    html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
-    html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-
-    // Numbered lists (1. item, 2. item, etc.)
-    html = html.replace(/^(\d+)\. (.+)$/gm, '<li class="lc-numbered-item">$2</li>');
-
-    // Bullet lists (- item or * item)
-    html = html.replace(/^[-*] (.+)$/gm, '<li class="lc-bullet-item">$1</li>');
-
-    // Wrap consecutive list items in ul/ol
-    html = html.replace(/(<li class="lc-numbered-item">[\s\S]*?<\/li>)(\s*<br>)*(\s*<li class="lc-numbered-item">)/g, '$1$3');
-    html = html.replace(/(<li class="lc-bullet-item">[\s\S]*?<\/li>)(\s*<br>)*(\s*<li class="lc-bullet-item">)/g, '$1$3');
-
-    // Wrap numbered items in ol
-    html = html.replace(/(<li class="lc-numbered-item">[\s\S]*?<\/li>)+/g, '<ol class="lc-ai-list">$&</ol>');
-
-    // Wrap bullet items in ul
-    html = html.replace(/(<li class="lc-bullet-item">[\s\S]*?<\/li>)+/g, '<ul class="lc-ai-list">$&</ul>');
-
-    // Paragraphs - double newlines become paragraph breaks
-    html = html.replace(/\n\n+/g, '</p><p class="lc-ai-paragraph">');
-
-    // Single line breaks
-    html = html.replace(/\n/g, '<br>');
-
-    // Wrap in paragraph
-    html = '<p class="lc-ai-paragraph">' + html + '</p>';
-
-    // Clean up empty paragraphs
-    html = html.replace(/<p class="lc-ai-paragraph"><\/p>/g, '');
-    html = html.replace(/<p class="lc-ai-paragraph">(\s*<br>\s*)*<\/p>/g, '');
-
-    return html;
-  }
+  // formatMarkdown is now provided by ChatRenderer - using shared implementation
 
   /**
    * Update problem info display
@@ -774,10 +762,12 @@ const UiPanel = (function () {
         payload: { problemSlug: slug }
       });
 
-      // Clear response display
+      // Clear response display but keep input
       const contentEl = document.querySelector('.lc-ai-coach-response-content');
       if (contentEl) {
-        contentEl.innerHTML = '<p class="lc-ai-coach-placeholder">Conversation history cleared.</p>';
+        window.ChatRenderer.injectStyles(document);
+        contentEl.innerHTML = window.ChatRenderer.renderChatThread([], { showInput: true });
+        window.ChatRenderer.setupEventListeners(contentEl, handleFollowUpMessage);
       }
     } catch (error) {
       console.error('[UiPanel] Failed to clear history:', error);
@@ -788,6 +778,7 @@ const UiPanel = (function () {
 
   /**
    * Load and display chat history for current problem
+   * Uses ChatRenderer for consistent rendering with collapsible messages
    */
   async function loadChatHistory() {
     try {
@@ -800,38 +791,24 @@ const UiPanel = (function () {
       });
 
       const history = response.history || [];
-
-      if (history.length === 0) {
-        // No history - show placeholder
-        return;
-      }
-
-      // Display the last assistant response from history
       const contentEl = document.querySelector('.lc-ai-coach-response-content');
       if (!contentEl) return;
 
-      // Find the last assistant message
-      const lastAssistantMsg = [...history].reverse().find(msg => msg.role === 'assistant');
+      // Inject ChatRenderer styles if not already present
+      window.ChatRenderer.injectStyles(document);
 
-      if (lastAssistantMsg) {
-        // Build history display HTML
-        let html = '';
+      // Use ChatRenderer to render the full chat thread with collapsible messages
+      const chatHtml = window.ChatRenderer.renderChatThread(history, {
+        collapseOld: true,
+        showInput: true
+      });
 
-        // Show conversation count
-        const exchangeCount = Math.floor(history.length / 2);
-        html += `<div class="lc-ai-coach-history-indicator">
-          <span>📜 ${exchangeCount} previous exchange${exchangeCount !== 1 ? 's' : ''}</span>
-        </div>`;
+      contentEl.innerHTML = chatHtml;
 
-        // Show the last response
-        html += `<div class="lc-ai-coach-last-response">`;
-        html += formatMarkdown(lastAssistantMsg.content);
-        html += `</div>`;
+      // Set up event listeners including follow-up handler
+      window.ChatRenderer.setupEventListeners(contentEl, handleFollowUpMessage);
 
-        contentEl.innerHTML = html;
-
-        console.log(`[UiPanel] Loaded ${history.length} history messages for ${slug}`);
-      }
+      console.log(`[UiPanel] Loaded ${history.length} history messages for ${slug}`);
     } catch (error) {
       console.error('[UiPanel] Failed to load chat history:', error);
     }
