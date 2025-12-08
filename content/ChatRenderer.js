@@ -643,6 +643,8 @@ const ChatRenderer = (function () {
 
       .${PREFIX}-message-content p {
         margin: 0 0 12px 0;
+        padding-left: 0;
+        text-indent: 0;
       }
 
       .${PREFIX}-message-content p:last-child {
@@ -655,6 +657,97 @@ const ChatRenderer = (function () {
       
       .${PREFIX}-message-content > *:last-child {
         margin-bottom: 0;
+      }
+      
+      /* Reset generic elements to prevent leaks */
+      .${PREFIX}-message-content div,
+      .${PREFIX}-message-content span,
+      .${PREFIX}-message-content applet,
+      .${PREFIX}-message-content object,
+      .${PREFIX}-message-content iframe,
+      .${PREFIX}-message-content h1,
+      .${PREFIX}-message-content h2,
+      .${PREFIX}-message-content h3,
+      .${PREFIX}-message-content h4,
+      .${PREFIX}-message-content h5,
+      .${PREFIX}-message-content h6,
+      .${PREFIX}-message-content p,
+      .${PREFIX}-message-content blockquote,
+      .${PREFIX}-message-content pre,
+      .${PREFIX}-message-content a,
+      .${PREFIX}-message-content abbr,
+      .${PREFIX}-message-content acronym,
+      .${PREFIX}-message-content address,
+      .${PREFIX}-message-content big,
+      .${PREFIX}-message-content cite,
+      .${PREFIX}-message-content code,
+      .${PREFIX}-message-content del,
+      .${PREFIX}-message-content dfn,
+      .${PREFIX}-message-content em,
+      .${PREFIX}-message-content img,
+      .${PREFIX}-message-content ins,
+      .${PREFIX}-message-content kbd,
+      .${PREFIX}-message-content q,
+      .${PREFIX}-message-content s,
+      .${PREFIX}-message-content samp,
+      .${PREFIX}-message-content small,
+      .${PREFIX}-message-content strike,
+      .${PREFIX}-message-content strong,
+      .${PREFIX}-message-content sub,
+      .${PREFIX}-message-content sup,
+      .${PREFIX}-message-content tt,
+      .${PREFIX}-message-content var,
+      .${PREFIX}-message-content b,
+      .${PREFIX}-message-content u,
+      .${PREFIX}-message-content i,
+      .${PREFIX}-message-content center,
+      .${PREFIX}-message-content dl,
+      .${PREFIX}-message-content dt,
+      .${PREFIX}-message-content dd,
+      .${PREFIX}-message-content ol,
+      .${PREFIX}-message-content ul,
+      .${PREFIX}-message-content li,
+      .${PREFIX}-message-content fieldset,
+      .${PREFIX}-message-content form,
+      .${PREFIX}-message-content label,
+      .${PREFIX}-message-content legend,
+      .${PREFIX}-message-content table,
+      .${PREFIX}-message-content caption,
+      .${PREFIX}-message-content tbody,
+      .${PREFIX}-message-content tfoot,
+      .${PREFIX}-message-content thead,
+      .${PREFIX}-message-content tr,
+      .${PREFIX}-message-content th,
+      .${PREFIX}-message-content td,
+      .${PREFIX}-message-content article,
+      .${PREFIX}-message-content aside,
+      .${PREFIX}-message-content canvas,
+      .${PREFIX}-message-content details,
+      .${PREFIX}-message-content embed,
+      .${PREFIX}-message-content figure,
+      .${PREFIX}-message-content figcaption,
+      .${PREFIX}-message-content footer,
+      .${PREFIX}-message-content header,
+      .${PREFIX}-message-content hgroup,
+      .${PREFIX}-message-content menu,
+      .${PREFIX}-message-content nav,
+      .${PREFIX}-message-content output,
+      .${PREFIX}-message-content ruby,
+      .${PREFIX}-message-content section,
+      .${PREFIX}-message-content summary,
+      .${PREFIX}-message-content time,
+      .${PREFIX}-message-content mark,
+      .${PREFIX}-message-content audio,
+      .${PREFIX}-message-content video {
+        padding: 0;
+        border: 0;
+        font: inherit;
+        vertical-align: baseline;
+      }
+      
+      /* Re-apply specific styles needed */
+      .${PREFIX}-message-content p {
+         margin-bottom: 12px;
       }
 
       /* ============================================
