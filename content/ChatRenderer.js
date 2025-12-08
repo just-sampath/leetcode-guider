@@ -20,23 +20,189 @@ const ChatRenderer = (function () {
   const PREFIX = 'lc-chat';
 
   /**
-   * Enhanced markdown formatting with better list and code support
+   * Convert LaTeX math notation to readable HTML
+   * Handles common math symbols and expressions
+   * @param {string} latex - The LaTeX expression
+   * @returns {string} HTML formatted math
+   */
+  function convertLatexToHtml(latex) {
+    if (!latex) return '';
+
+    let html = latex;
+
+    // Common LaTeX commands to symbols/HTML
+    const latexMap = {
+      // Comparisons
+      '\\le': '≤',
+      '\\leq': '≤',
+      '\\ge': '≥',
+      '\\geq': '≥',
+      '\\neq': '≠',
+      '\\ne': '≠',
+      '\\lt': '<',
+      '\\gt': '>',
+      '\\approx': '≈',
+      '\\equiv': '≡',
+
+      // Greek letters
+      '\\alpha': 'α',
+      '\\beta': 'β',
+      '\\gamma': 'γ',
+      '\\delta': 'δ',
+      '\\epsilon': 'ε',
+      '\\theta': 'θ',
+      '\\lambda': 'λ',
+      '\\mu': 'μ',
+      '\\pi': 'π',
+      '\\sigma': 'σ',
+      '\\phi': 'φ',
+      '\\omega': 'ω',
+      '\\Sigma': 'Σ',
+      '\\Pi': 'Π',
+      '\\Omega': 'Ω',
+      '\\Delta': 'Δ',
+
+      // Operators & symbols
+      '\\times': '×',
+      '\\div': '÷',
+      '\\cdot': '·',
+      '\\pm': '±',
+      '\\mp': '∓',
+      '\\infty': '∞',
+      '\\sum': 'Σ',
+      '\\prod': 'Π',
+      '\\sqrt': '√',
+      '\\partial': '∂',
+      '\\nabla': '∇',
+
+      // Sets
+      '\\in': '∈',
+      '\\notin': '∉',
+      '\\subset': '⊂',
+      '\\subseteq': '⊆',
+      '\\supset': '⊃',
+      '\\supseteq': '⊇',
+      '\\cup': '∪',
+      '\\cap': '∩',
+      '\\emptyset': '∅',
+      '\\forall': '∀',
+      '\\exists': '∃',
+
+      // Arrows
+      '\\rightarrow': '→',
+      '\\leftarrow': '←',
+      '\\Rightarrow': '⇒',
+      '\\Leftarrow': '⇐',
+      '\\leftrightarrow': '↔',
+      '\\Leftrightarrow': '⇔',
+      '\\to': '→',
+
+      // Logic
+      '\\land': '∧',
+      '\\lor': '∨',
+      '\\neg': '¬',
+      '\\lnot': '¬',
+
+      // Other
+      '\\ldots': '…',
+      '\\cdots': '⋯',
+      '\\vdots': '⋮',
+      '\\ddots': '⋱',
+      '\\quad': '  ',
+      '\\qquad': '    ',
+      '\\,': ' ',
+      '\\;': ' ',
+      '\\ ': ' ',
+      '\\!': '',
+    };
+
+    // Replace LaTeX commands with symbols
+    for (const [cmd, symbol] of Object.entries(latexMap)) {
+      // Escape special regex characters in the command
+      const escaped = cmd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      html = html.replace(new RegExp(escaped, 'g'), symbol);
+    }
+
+    // Handle superscripts: x^2 or x^{abc}
+    html = html.replace(/\^{([^}]+)}/g, '<sup>$1</sup>');
+    html = html.replace(/\^(\w)/g, '<sup>$1</sup>');
+
+    // Handle subscripts: x_i or x_{abc}
+    html = html.replace(/_{([^}]+)}/g, '<sub>$1</sub>');
+    html = html.replace(/_(\w)/g, '<sub>$1</sub>');
+
+    // Handle fractions: \frac{a}{b}
+    html = html.replace(/\\frac{([^}]+)}{([^}]+)}/g, '<span class="math-frac"><span class="math-num">$1</span>/<span class="math-den">$2</span></span>');
+
+    // Handle \text{} command - just extract the text
+    html = html.replace(/\\text{([^}]+)}/g, '$1');
+
+    // Handle \mathbf{}, \mathrm{}, \mathit{} etc
+    html = html.replace(/\\math\w+{([^}]+)}/g, '$1');
+
+    // Handle \left and \right (just remove them)
+    html = html.replace(/\\left/g, '');
+    html = html.replace(/\\right/g, '');
+
+    // Handle braces
+    html = html.replace(/\\{/g, '{');
+    html = html.replace(/\\}/g, '}');
+    html = html.replace(/\\[[\]]/g, match => match[1]);
+
+    // Clean up remaining backslashes from unknown commands
+    html = html.replace(/\\([a-zA-Z]+)/g, '$1');
+
+    return html;
+  }
+
+  /**
+   * Enhanced markdown formatting with better list, code and math support
    * @param {string} text - Raw text to format
    * @returns {string} HTML formatted text
    */
   function formatMarkdown(text) {
     if (!text) return '';
 
-    // Escape HTML first
-    let html = text
+    // Store code blocks and math expressions to protect them
+    const codeBlocks = [];
+    const mathBlocks = [];
+
+    // Extract and protect code blocks first
+    let html = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+      codeBlocks.push({ lang, code: code.trim() });
+      return placeholder;
+    });
+
+    // Extract and protect display math \[...\] or $$...$$
+    html = html.replace(/\\\[([\s\S]*?)\\\]/g, (match, math) => {
+      const placeholder = `__DISPLAY_MATH_${mathBlocks.length}__`;
+      mathBlocks.push({ type: 'display', content: math.trim() });
+      return placeholder;
+    });
+    html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+      const placeholder = `__DISPLAY_MATH_${mathBlocks.length}__`;
+      mathBlocks.push({ type: 'display', content: math.trim() });
+      return placeholder;
+    });
+
+    // Extract and protect inline math \(...\) or $...$
+    html = html.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
+      const placeholder = `__INLINE_MATH_${mathBlocks.length}__`;
+      mathBlocks.push({ type: 'inline', content: math.trim() });
+      return placeholder;
+    });
+    html = html.replace(/\$([^$\n]+)\$/g, (match, math) => {
+      const placeholder = `__INLINE_MATH_${mathBlocks.length}__`;
+      mathBlocks.push({ type: 'inline', content: math.trim() });
+      return placeholder;
+    });
+
+    // Escape HTML
+    html = html
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-
-    // Code blocks (must be done first to preserve content)
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `<pre class="${PREFIX}-code-block"><code class="language-${lang}">${code.trim()}</code></pre>`;
-    });
 
     // Inline code
     html = html.replace(/`([^`]+)`/g, `<code class="${PREFIX}-inline-code">$1</code>`);
@@ -52,25 +218,81 @@ const ChatRenderer = (function () {
     html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
     html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
 
-    // Numbered lists
+    // Blockquotes - handle before lists
+    // First, handle multi-line blockquotes by joining consecutive > lines
+    html = html.replace(/^&gt; (.+)$/gm, `<blockquote class="${PREFIX}-blockquote">$1</blockquote>`);
+    // Merge consecutive blockquotes
+    html = html.replace(/<\/blockquote>\n<blockquote class="[^"]+">|<\/blockquote><br><blockquote class="[^"]+">/g, '<br>');
+
+    // Numbered lists - match lines starting with number followed by period
     html = html.replace(/^(\d+)\. (.+)$/gm, `<li class="${PREFIX}-numbered-item">$2</li>`);
 
-    // Bullet lists
-    html = html.replace(/^[-*] (.+)$/gm, `<li class="${PREFIX}-bullet-item">$1</li>`);
+    // Bullet lists - match lines starting with - or * (but not inside other elements)
+    html = html.replace(/^[\-\*] (.+)$/gm, `<li class="${PREFIX}-bullet-item">$1</li>`);
 
-    // Wrap consecutive list items
-    html = html.replace(new RegExp(`(<li class="${PREFIX}-numbered-item">[\\s\\S]*?</li>)(\\s*<br>)*(\\s*<li class="${PREFIX}-numbered-item">)`, 'g'), '$1$3');
-    html = html.replace(new RegExp(`(<li class="${PREFIX}-bullet-item">[\\s\\S]*?</li>)(\\s*<br>)*(\\s*<li class="${PREFIX}-bullet-item">)`, 'g'), '$1$3');
+    // Process list wrapping BEFORE converting line breaks
+    // Split into lines and process
+    const lines = html.split('\n');
+    let result = [];
+    let inOrderedList = false;
+    let inUnorderedList = false;
 
-    // Wrap in ol/ul
-    html = html.replace(new RegExp(`(<li class="${PREFIX}-numbered-item">[\\s\\S]*?</li>)+`, 'g'), `<ol class="${PREFIX}-list">$&</ol>`);
-    html = html.replace(new RegExp(`(<li class="${PREFIX}-bullet-item">[\\s\\S]*?</li>)+`, 'g'), `<ul class="${PREFIX}-list">$&</ul>`);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const isNumberedItem = line.includes(`class="${PREFIX}-numbered-item"`);
+      const isBulletItem = line.includes(`class="${PREFIX}-bullet-item"`);
+
+      if (isNumberedItem) {
+        if (!inOrderedList) {
+          result.push(`<ol class="${PREFIX}-list">`);
+          inOrderedList = true;
+        }
+        if (inUnorderedList) {
+          result.push('</ul>');
+          inUnorderedList = false;
+        }
+        result.push(line);
+      } else if (isBulletItem) {
+        if (!inUnorderedList) {
+          result.push(`<ul class="${PREFIX}-list">`);
+          inUnorderedList = true;
+        }
+        if (inOrderedList) {
+          result.push('</ol>');
+          inOrderedList = false;
+        }
+        result.push(line);
+      } else {
+        if (inOrderedList) {
+          result.push('</ol>');
+          inOrderedList = false;
+        }
+        if (inUnorderedList) {
+          result.push('</ul>');
+          inUnorderedList = false;
+        }
+        result.push(line);
+      }
+    }
+
+    // Close any open lists at the end
+    if (inOrderedList) result.push('</ol>');
+    if (inUnorderedList) result.push('</ul>');
+
+    html = result.join('\n');
 
     // Paragraphs
     html = html.replace(/\n\n+/g, '</p><p>');
 
     // Single line breaks
     html = html.replace(/\n/g, '<br>');
+
+    // Clean up extra <br> around block elements
+    html = html.replace(/<br>(<ol|<ul|<\/ol|<\/ul|<blockquote|<\/blockquote|<h[234]|<\/h[234]|<div|<\/div|<pre|<\/pre)/g, '$1');
+    html = html.replace(/(<\/ol>|<\/ul>|<blockquote[^>]*>|<\/blockquote>|<h[234]>|<\/h[234]>|<div[^>]*>|<\/div>|<pre[^>]*>|<\/pre>)<br>/g, '$1');
+
+    // Clean up multiple consecutive <br> tags
+    html = html.replace(/(<br>){2,}/g, '<br>');
 
     // Wrap in paragraph
     html = '<p>' + html + '</p>';
@@ -79,8 +301,45 @@ const ChatRenderer = (function () {
     html = html.replace(/<p><\/p>/g, '');
     html = html.replace(/<p>(\s*<br>\s*)*<\/p>/g, '');
 
+    // Clean up <br> at start/end of paragraphs
+    html = html.replace(/<p><br>/g, '<p>');
+    html = html.replace(/<br><\/p>/g, '</p>');
+
+    // Clean up paragraphs around block elements
+    html = html.replace(/<p>(<ol|<ul|<blockquote|<h[234]|<div|<pre)/g, '$1');
+    html = html.replace(/(<\/ol>|<\/ul>|<\/blockquote>|<\/h[234]>|<\/div>|<\/pre>)<\/p>/g, '$1');
+
+    // Clean up <br> immediately before/after block elements
+    html = html.replace(/<br>(<blockquote|<ol|<ul|<h[234]|<div|<pre)/g, '$1');
+    html = html.replace(/(<\/blockquote>|<\/ol>|<\/ul>|<\/h[234]>|<\/div>|<\/pre>)<br>/g, '$1');
+
+    // Restore code blocks
+    codeBlocks.forEach((block, i) => {
+      html = html.replace(
+        `__CODE_BLOCK_${i}__`,
+        `<pre class="${PREFIX}-code-block"><code class="language-${block.lang}">${block.code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
+      );
+    });
+
+    // Restore math blocks with conversion
+    mathBlocks.forEach((block, i) => {
+      const convertedMath = convertLatexToHtml(block.content);
+      if (block.type === 'display') {
+        html = html.replace(
+          `__DISPLAY_MATH_${i}__`,
+          `<div class="${PREFIX}-math-display">${convertedMath}</div>`
+        );
+      } else {
+        html = html.replace(
+          `__INLINE_MATH_${i}__`,
+          `<span class="${PREFIX}-math-inline">${convertedMath}</span>`
+        );
+      }
+    });
+
     return html;
   }
+
 
   /**
    * Create a single message bubble element
@@ -368,8 +627,14 @@ const ChatRenderer = (function () {
       .${PREFIX}-message-content h3,
       .${PREFIX}-message-content h4 {
         color: var(--lc-text-primary, #fff);
-        margin: 12px 0 6px 0;
+        margin: 16px 0 8px 0;
         font-weight: 600;
+      }
+      
+      .${PREFIX}-message-content h2:first-child,
+      .${PREFIX}-message-content h3:first-child,
+      .${PREFIX}-message-content h4:first-child {
+        margin-top: 0;
       }
 
       .${PREFIX}-message-content h2 { font-size: 15px; }
@@ -377,10 +642,18 @@ const ChatRenderer = (function () {
       .${PREFIX}-message-content h4 { font-size: 13px; }
 
       .${PREFIX}-message-content p {
-        margin: 0 0 8px 0;
+        margin: 0 0 12px 0;
       }
 
       .${PREFIX}-message-content p:last-child {
+        margin-bottom: 0;
+      }
+      
+      .${PREFIX}-message-content > *:first-child {
+        margin-top: 0;
+      }
+      
+      .${PREFIX}-message-content > *:last-child {
         margin-bottom: 0;
       }
 
@@ -564,13 +837,89 @@ const ChatRenderer = (function () {
          Lists
          ============================================ */
       .${PREFIX}-list {
-        margin: 8px 0;
-        padding-left: 20px;
+        margin: 12px 0;
+        padding-left: 24px;
       }
 
       .${PREFIX}-list li {
-        margin: 4px 0;
+        margin: 6px 0;
         line-height: 1.5;
+      }
+      
+      .${PREFIX}-list li:first-child {
+        margin-top: 0;
+      }
+      
+      .${PREFIX}-list li:last-child {
+        margin-bottom: 0;
+      }
+
+      /* ============================================
+         Blockquotes
+         ============================================ */
+      .${PREFIX}-blockquote {
+        margin: 12px 0;
+        padding: 12px 16px;
+        border-left: 4px solid var(--lc-accent, #ffa116);
+        background: rgba(255, 161, 22, 0.08);
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: var(--lc-text-secondary, #b3b3b3);
+      }
+
+      .${PREFIX}-blockquote p {
+        margin: 0;
+      }
+      
+      .${PREFIX}-blockquote:first-child {
+        margin-top: 0;
+      }
+      
+      .${PREFIX}-blockquote:last-child {
+        margin-bottom: 0;
+      }
+
+      /* ============================================
+         Math Styling
+         ============================================ */
+      .${PREFIX}-math-inline {
+        font-family: 'Times New Roman', 'Cambria Math', Georgia, serif;
+        font-style: italic;
+        color: var(--lc-text-primary, #fff);
+        padding: 0 2px;
+        font-size: 1em;
+      }
+
+      .${PREFIX}-math-display {
+        font-family: 'Times New Roman', 'Cambria Math', Georgia, serif;
+        font-style: italic;
+        color: var(--lc-text-primary, #fff);
+        display: block;
+        text-align: center;
+        padding: 12px 16px;
+        margin: 12px 0;
+        background: var(--lc-bg-primary, #1a1a1a);
+        border-radius: 8px;
+        border: 1px solid var(--lc-border, rgba(255,255,255,0.08));
+        font-size: 1.1em;
+      }
+
+      .${PREFIX}-math-inline sup,
+      .${PREFIX}-math-display sup,
+      .${PREFIX}-math-inline sub,
+      .${PREFIX}-math-display sub {
+        font-size: 0.75em;
+      }
+
+      .math-frac {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .math-num,
+      .math-den {
+        padding: 0 2px;
       }
 
       /* ============================================
